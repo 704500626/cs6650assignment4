@@ -9,7 +9,11 @@ public class DBSeeder {
     private static final String PASSWORD = "adminadmin";
 
     public static void main(String[] args) {
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
+        String url = URL;
+        if (args.length == 1) {
+            url = args[0];
+        }
+        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD)) {
             conn.setAutoCommit(false);
             insertResorts(conn);
             insertSkiers(conn);

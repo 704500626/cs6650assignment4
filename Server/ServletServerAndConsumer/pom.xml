@@ -31,6 +31,16 @@
             <artifactId>commons-pool2</artifactId>
             <version>2.12.1</version>
         </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb</artifactId>
+            <version>2.20.86</version> <!-- use latest stable -->
+        </dependency>
     </dependencies>
     <build>
         <finalName>cs6650Server</finalName>
