@@ -1,9 +1,9 @@
-package edu.northeastern.clientpart2;
+package edu.northeastern.clientsold;
 
 import com.google.gson.Gson;
 import edu.northeastern.common.CsvWriterThread;
 import edu.northeastern.common.RandomRequest;
-import edu.northeastern.utils.ServerUtils;
+import edu.northeastern.utils.ConfigUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -18,15 +18,14 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SkiersApiLoadTestAsync {
+public class SkiersApiLoadTestSyncP2 {
     // Global constants for the load test
     static final int TOTAL_REQUEST_COUNT = 200_000; // Total number of POST requests to send to the server
     static final int PHASE1_THREAD_COUNT = 32; // The number of consumer threads sending requests for phase 1
     static final int PHASE1_PER_THREAD_REQUEST_COUNT = 1000; // The number of POST requests to be sent by consumer threads of phase 1
-    static final int PHASE2_THREAD_COUNT = 1; // The number of consumer threads sending requests for phase 2
+    static final int PHASE2_THREAD_COUNT = 100; // The number of consumer threads sending requests for phase 2
     static final int MAX_RETRIES = 5; // The maximum number of retries of each request
     static final int REQUEST_BUFFER_SIZE = 1000; // The buffer size of the http request content, kept as small as possible
-    static final int MAX_CONCURRENT_REQUESTS = 1200; // The maximum number of concurrent requests
     static final int METRICS_BUFFER_SIZE = 5000; // The buffer size of metrics queued
 
     // Notice that phase 1 is completed when any one of the phase 1 threads finishes send and receiving all PHASE1_PER_THREAD_REQUEST_COUNT requests, not when all of them finish
@@ -39,45 +38,46 @@ public class SkiersApiLoadTestAsync {
     static final AtomicInteger failedRequests = new AtomicInteger(0);
     static final AtomicLong totalResponseTime = new AtomicLong(0);
 
-    // Shared asynchronous HTTP client and related objects
-    static HttpClient asyncHttpClient;
-    static final Semaphore concurrentRequests = new Semaphore(MAX_CONCURRENT_REQUESTS); // A semaphore to allow at most MAX_CONCURRENT_REQUESTS concurrent asynchronous requests
-    static final String serverUrl = ServerUtils.getServerUrl();
+    // Shared synchronous HTTP client and related objects
+    static HttpClient syncHttpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(10)).build();
     static final Gson gson = new Gson();
+    static final String serverUrl = ConfigUtils.getServerUrl();
 
     // Thread-safe collection to store request metrics
     static final BlockingQueue<String[]> metricsBuffer = new LinkedBlockingQueue<>(METRICS_BUFFER_SIZE);
     static final String CSV_FILE = "request_metrics.csv";
 
     public static void main(String[] args) throws InterruptedException, IOException {
-        postLoadTest();
+        postLoadTestThreadPool();
         CsvWriterThread.calculateMetrics(CSV_FILE);
     }
 
-    private static void postLoadTest() throws InterruptedException {
-        // An executor with a fixed thread pool for the async client
-        ExecutorService executor = Executors.newFixedThreadPool(MAX_CONCURRENT_REQUESTS);
-        asyncHttpClient = HttpClient.newBuilder().executor(executor).version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(10)).build();
-
+    // POST Load testing with ExecutorService
+    private static void postLoadTestThreadPool() throws InterruptedException {
         long startTime = System.currentTimeMillis();
         // Global latch counts the total number of consumer threads (phase1 + phase2)
         CountDownLatch latch = new CountDownLatch(PHASE1_THREAD_COUNT + PHASE2_THREAD_COUNT);
         BlockingQueue<RandomRequest> requestBuffer = new LinkedBlockingQueue<>(REQUEST_BUFFER_SIZE);
 
-        // Create Producer thread for generating request content
-        Thread producerThread = new Thread(new ProducerThread(requestBuffer));
-        producerThread.start();
+        // Submit the Producer task to an executor (or start it in its own thread)
+        ExecutorService producerExecutor = Executors.newSingleThreadExecutor();
+        producerExecutor.submit(new ProducerThread(requestBuffer));
+        producerExecutor.shutdown();
 
         // CSV Writer thread
         Thread csvWriterThread = new Thread(new CsvWriterThread(metricsBuffer, CSV_FILE));
         csvWriterThread.start();
 
-        // Phase 1: Create and start PHASE1_THREAD_COUNT ConsumerThread
+        // Create an ExecutorService for consumer tasks
+        int totalConsumerThreads = PHASE1_THREAD_COUNT + PHASE2_THREAD_COUNT;
+        ExecutorService consumerExecutor = Executors.newFixedThreadPool(totalConsumerThreads);
+
+        // Phase 1: Submit PHASE1_THREAD_COUNT ConsumerThread tasks
         for (int i = 0; i < PHASE1_THREAD_COUNT; i++) {
-            new Thread(new ConsumerPhase1Thread(requestBuffer, latch)).start();
+            consumerExecutor.submit(new ConsumerPhase1Thread(requestBuffer, latch));
         }
 
-        // Wait for phase 1 to signal completion (only one thread needs to do this)
+        // Wait for phase 1 to signal completion, only one thread signals this
         lock.lock();
         try {
             while (!phase1Completed) {
@@ -98,9 +98,9 @@ public class SkiersApiLoadTestAsync {
         System.out.println("Phase 1 Throughput: " + (phase1SuccessfulRequestCount + phase1FailedRequestCount) / ((double) (phase1EndTime - startTime) / 1000)  + " req/s");
 
         long phase2StartTime = System.currentTimeMillis();
-        // Phase 2: Create and start PHASE2_THREAD_COUNT ConsumerThread
+        // Phase 2: Submit PHASE2_THREAD_COUNT ConsumerThread tasks
         for (int i = 0; i < PHASE2_THREAD_COUNT; i++) {
-            new Thread(new ConsumerPhase2Thread(requestBuffer, latch)).start();
+            consumerExecutor.submit(new ConsumerPhase2Thread(requestBuffer, latch));
         }
         // Wait for all consumer tasks to finish
         latch.await();
@@ -117,42 +117,51 @@ public class SkiersApiLoadTestAsync {
         System.out.println("Phase 2 Avg Response time: " + (double) (totalResponseTime.get() - phase1ResponseTime)/ (TOTAL_REQUEST_COUNT - phase1SuccessfulRequestCount - phase1FailedRequestCount)+ " ms");
         System.out.println("Phase 2 Throughput " + (TOTAL_REQUEST_COUNT - phase1SuccessfulRequestCount - phase1FailedRequestCount) / ((double) (endTime - phase2StartTime) / 1000)  + " req/s");
         System.out.println("Total Throughput " + TOTAL_REQUEST_COUNT / ((double) (endTime - startTime) / 1000)  + " req/s");
-        System.out.println("Number of threads in phase 1 responsible for sending requests: " + PHASE1_THREAD_COUNT);
-        System.out.println("Number of threads in phase 2 responsible for sending requests: " + PHASE2_THREAD_COUNT);
-        System.out.println("Number of threads in thread pool responsible for receiving requests: " + MAX_CONCURRENT_REQUESTS);
+        System.out.println("Number of threads in phase 1 responsible for sending and receiving requests: " + PHASE1_THREAD_COUNT);
+        System.out.println("Number of threads in phase 2 responsible for sending and receiving requests: " + PHASE2_THREAD_COUNT);
 
-        executor.shutdown();
-        executor.awaitTermination(1, TimeUnit.MINUTES);
+        // Shut down the consumer executor
+        consumerExecutor.shutdown();
     }
 
-    // Asynchronous request with retry method (shared by both phases)
-    private static CompletableFuture<Integer> sendRequestWithRetryAsync(HttpRequest httpRequest, int attempt) {
-        return asyncHttpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.discarding()).thenCompose(response -> {
-            if (response.statusCode() == HttpURLConnection.HTTP_CREATED) {
-                return CompletableFuture.completedFuture(response.statusCode());
-            } else {
-                System.err.println("Received status code: " + response.statusCode() + " on attempt " + (attempt + 1));
-                if (attempt < MAX_RETRIES - 1) {
-                    return CompletableFuture.supplyAsync(() -> null, CompletableFuture.delayedExecutor(200L * (attempt + 1), TimeUnit.MILLISECONDS)).thenCompose(v -> sendRequestWithRetryAsync(httpRequest, attempt + 1));
-                } else {
-                    System.err.println("Request permanently failed after " + MAX_RETRIES + " attempts.");
-                    return CompletableFuture.completedFuture(HttpURLConnection.HTTP_INTERNAL_ERROR);
-                }
-            }
-        }).exceptionally(ex -> {
-            System.err.println("Request failed: " + ex.getMessage() + " (attempt " + (attempt + 1) + ")");
-            if (attempt < MAX_RETRIES - 1) {
+    // Synchronous request with retry method (shared by both phases)
+    private static void sendRequestWithRetry(RandomRequest request) {
+        HttpRequest httpRequest = RandomRequest.buildHttpRequestForRandomRequest(request, serverUrl, gson.toJson(request.getLiftRide()));
+        int attempts = 0;
+        long st = System.currentTimeMillis();
+        int statusCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
+        try {
+            while (attempts < MAX_RETRIES) {
                 try {
-                    Thread.sleep(200L * (attempt + 1));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    HttpResponse<String> response = syncHttpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                    statusCode = response.statusCode();
+                    if (statusCode == HttpURLConnection.HTTP_CREATED) {
+                        break;
+                    }
+                    System.err.println("Received status code: " + statusCode + " on attempt " + (attempts + 1));
+                } catch (IOException e) {
+                    statusCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
+                    System.err.println("Request failed: " + e.getMessage() + " (attempt " + (attempts + 1) + ")");
                 }
-                return sendRequestWithRetryAsync(httpRequest, attempt + 1).join();
-            } else {
-                System.err.println("Request permanently failed after " + MAX_RETRIES + " attempts.");
+                attempts++;
+                Thread.sleep(200L * attempts);
             }
-            return HttpURLConnection.HTTP_INTERNAL_ERROR;
-        });
+            if (attempts == MAX_RETRIES) {
+                System.err.println("Request failed after " + MAX_RETRIES + " attempts.");
+            }
+            long et = System.currentTimeMillis();
+            totalResponseTime.getAndAdd(et - st);
+            String[] record = {String.valueOf(st), "POST", String.valueOf(et - st), String.valueOf(statusCode)};
+            metricsBuffer.put(record);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            if (statusCode == HttpURLConnection.HTTP_CREATED) {
+                successRequests.incrementAndGet();
+            } else {
+                failedRequests.incrementAndGet();
+            }
+        }
     }
 
     static class ProducerThread implements Runnable {
@@ -187,51 +196,25 @@ public class SkiersApiLoadTestAsync {
 
         @Override
         public void run() {
-            // A local CountDownLatch for the known number of requests, because we are using async requests
-            CountDownLatch localLatch = new CountDownLatch(PHASE1_PER_THREAD_REQUEST_COUNT);
             for (int i = 0; i < PHASE1_PER_THREAD_REQUEST_COUNT; i++) {
                 try {
                     RandomRequest request = buffer.take();
                     if (request.isPoisonPill()) break; // An unlikely edge case where the poison pill is encountered before finishing sending PHASE1_PER_THREAD_REQUEST_COUNT number of requests
-                    concurrentRequests.acquire(); // Ensure we do not exceed the concurrent request limit.
-                    long st = System.currentTimeMillis();
-                    HttpRequest httpRequest = RandomRequest.buildHttpRequestForRandomRequest(request, serverUrl, gson.toJson(request.getLiftRide()));
-                    sendRequestWithRetryAsync(httpRequest, 0).whenComplete((statusCode, ex) -> {
-                        if (statusCode == HttpURLConnection.HTTP_CREATED) {
-                            successRequests.incrementAndGet();
-                        } else {
-                            failedRequests.incrementAndGet();
-                        }
-                        long et = System.currentTimeMillis();
-                        totalResponseTime.getAndAdd(et - st);
-                        concurrentRequests.release();
-                        localLatch.countDown();
-                        String[] record = {String.valueOf(st), "POST", String.valueOf(et - st), String.valueOf(statusCode)};
-                        try {
-                            metricsBuffer.put(record);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
-                    });
+                    sendRequestWithRetry(request);
                 } catch (InterruptedException e) {
+                    System.err.println("Exception when calling SkierApi, error: " + e.getMessage());
                     Thread.currentThread().interrupt();
                 }
             }
-            // Wait until all asynchronous requests from this thread are complete
-            try {
-                localLatch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
             // Signal phase 1 completion
-            lock.lock();
-            try {
-                if (!phase1Completed) {
+            if (!phase1Completed) {
+                lock.lock();
+                try {
                     phase1Completed = true;
                     phase1Completion.signal();
+                } finally {
+                    lock.unlock();
                 }
-            } finally {
-                lock.unlock();
             }
             latch.countDown();
         }
@@ -248,39 +231,16 @@ public class SkiersApiLoadTestAsync {
 
         @Override
         public void run() {
-            // Create a Phaser with 1 registered party (the thread itself), and new asynchronous tasks will register themselves.
-            Phaser phaser = new Phaser(1);
             while (true) {
                 try {
                     RandomRequest request = buffer.take();
                     if (request.isPoisonPill()) break;
-                    phaser.register(); // Register a new party for this asynchronous task
-                    concurrentRequests.acquire(); // Ensure we do not exceed the concurrent request limit.
-                    long st = System.currentTimeMillis();
-                    HttpRequest httpRequest = RandomRequest.buildHttpRequestForRandomRequest(request, serverUrl, gson.toJson(request.getLiftRide()));
-                    sendRequestWithRetryAsync(httpRequest, 0).whenComplete((statusCode, ex) -> {
-                        if (statusCode == HttpURLConnection.HTTP_CREATED) {
-                            successRequests.incrementAndGet();
-                        } else {
-                            failedRequests.incrementAndGet();
-                        }
-                        long et = System.currentTimeMillis();
-                        totalResponseTime.getAndAdd(et - st);
-                        concurrentRequests.release();
-                        phaser.arriveAndDeregister();
-                        String[] record = {String.valueOf(st), "POST", String.valueOf(et - st), String.valueOf(statusCode)};
-                        try {
-                            metricsBuffer.put(record);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
-                    });
+                    sendRequestWithRetry(request);
                 } catch (InterruptedException e) {
+                    System.err.println("Exception when calling SkierApi, error: " + e.getMessage());
                     Thread.currentThread().interrupt();
                 }
             }
-            // Arrive and await all registered tasks to complete.
-            phaser.arriveAndAwaitAdvance();
             latch.countDown();
         }
     }

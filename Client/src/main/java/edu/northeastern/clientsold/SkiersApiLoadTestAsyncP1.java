@@ -1,9 +1,8 @@
-package edu.northeastern.clientpart1;
+package edu.northeastern.clientsold;
 
 import com.google.gson.Gson;
-import edu.northeastern.common.CsvWriterThread;
 import edu.northeastern.common.RandomRequest;
-import edu.northeastern.utils.ServerUtils;
+import edu.northeastern.utils.ConfigUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -18,15 +17,15 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SkiersApiLoadTestAsync {
+public class SkiersApiLoadTestAsyncP1 {
     // Global constants for the load test
     static final int TOTAL_REQUEST_COUNT = 200_000; // Total number of POST requests to send to the server
     static final int PHASE1_THREAD_COUNT = 32; // The number of consumer threads sending requests for phase 1
     static final int PHASE1_PER_THREAD_REQUEST_COUNT = 1000; // The number of POST requests to be sent by consumer threads of phase 1
     static final int PHASE2_THREAD_COUNT = 1; // The number of consumer threads sending requests for phase 2
     static final int MAX_RETRIES = 5; // The maximum number of retries of each request
-    static final int REQUEST_BUFFER_SIZE = 1000; // The buffer size of the http request content, kept as small as possible
-    static final int MAX_CONCURRENT_REQUESTS = 1200; // The maximum number of concurrent requests
+    static final int REQUEST_BUFFER_SIZE = 3000; // The buffer size of the http request content, kept as small as possible
+    static final int MAX_CONCURRENT_REQUESTS = 100; // The maximum number of concurrent requests
 
     // Notice that phase 1 is completed when any one of the phase 1 threads finishes send and receiving all PHASE1_PER_THREAD_REQUEST_COUNT requests, not when all of them finish
     static final Lock lock = new ReentrantLock(); // Lock used to acquire phase1Completion
@@ -41,7 +40,7 @@ public class SkiersApiLoadTestAsync {
     // Shared asynchronous HTTP client and related objects
     static HttpClient asyncHttpClient;
     static final Semaphore concurrentRequests = new Semaphore(MAX_CONCURRENT_REQUESTS); // A semaphore to allow at most MAX_CONCURRENT_REQUESTS concurrent asynchronous requests
-    static final String serverUrl = ServerUtils.getServerUrl();
+    static final String serverUrl = ConfigUtils.getServerUrl();
     static final Gson gson = new Gson();
 
     public static void main(String[] args) throws InterruptedException, IOException {
@@ -182,7 +181,7 @@ public class SkiersApiLoadTestAsync {
                     concurrentRequests.acquire(); // Ensure we do not exceed the concurrent request limit.
                     long st = System.currentTimeMillis();
                     HttpRequest httpRequest = RandomRequest.buildHttpRequestForRandomRequest(request, serverUrl, gson.toJson(request.getLiftRide()));
-                    sendRequestWithRetryAsync(httpRequest, 0).whenComplete((statusCode, ex) -> {
+                    sendRequestWithSyncRetryAsync(httpRequest, 0).whenComplete((statusCode, ex) -> {
                         if (statusCode == HttpURLConnection.HTTP_CREATED) {
                             successRequests.incrementAndGet();
                         } else {
@@ -238,7 +237,7 @@ public class SkiersApiLoadTestAsync {
                     concurrentRequests.acquire(); // Ensure we do not exceed the concurrent request limit.
                     long st = System.currentTimeMillis();
                     HttpRequest httpRequest = RandomRequest.buildHttpRequestForRandomRequest(request, serverUrl, gson.toJson(request.getLiftRide()));
-                    sendRequestWithRetryAsync(httpRequest, 0).whenComplete((statusCode, ex) -> {
+                    sendRequestWithSyncRetryAsync(httpRequest, 0).whenComplete((statusCode, ex) -> {
                         if (statusCode == HttpURLConnection.HTTP_CREATED) {
                             successRequests.incrementAndGet();
                         } else {
@@ -257,5 +256,76 @@ public class SkiersApiLoadTestAsync {
             phaser.arriveAndAwaitAdvance();
             latch.countDown();
         }
+    }
+
+    private static CompletableFuture<Integer> sendRequestWithSyncRetryAsync(HttpRequest httpRequest, int attempt) {
+        return asyncHttpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.discarding()).thenCompose(response -> {
+            if (response.statusCode() == HttpURLConnection.HTTP_CREATED) {
+                return CompletableFuture.completedFuture(response.statusCode());
+            } else {
+                System.err.println("Received status code: " + response.statusCode() + " on attempt " + (attempt + 1));
+                if (attempt < MAX_RETRIES - 1) {
+                    try {
+                        Thread.sleep(200L * (attempt + 1)); // Synchronous sleep before retry
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return sendRequestWithSyncRetryAsync(httpRequest, attempt + 1); // Retry synchronously
+                } else {
+                    System.err.println("Request permanently failed after " + MAX_RETRIES + " attempts.");
+                    return CompletableFuture.completedFuture(HttpURLConnection.HTTP_INTERNAL_ERROR);
+                }
+            }
+        }).exceptionally(ex -> {
+            System.err.println("Request failed: " + ex.getMessage() + " (attempt " + (attempt + 1) + ")");
+            if (attempt < MAX_RETRIES - 1) {
+                try {
+                    Thread.sleep(200L * (attempt + 1)); // Synchronous sleep before retry
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return sendRequestWithSyncRetryAsync(httpRequest, attempt + 1).join(); // Retry synchronously
+            } else {
+                System.err.println("Request permanently failed after " + MAX_RETRIES + " attempts.");
+            }
+            return HttpURLConnection.HTTP_INTERNAL_ERROR;
+        });
+    }
+
+    private static CompletableFuture<Integer> sendRequestWithSyncRetryAsync_(HttpRequest httpRequest, int attempt) {
+        return asyncHttpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.discarding()).thenCompose(response -> {
+            if (response.statusCode() == HttpURLConnection.HTTP_CREATED) {
+                return CompletableFuture.completedFuture(response.statusCode());
+            } else {
+                System.err.println("Received status code: " + response.statusCode() + " on attempt " + (attempt + 1));
+                if (attempt < MAX_RETRIES - 1) {
+                    return CompletableFuture.completedFuture(null)
+                            .thenCompose(v -> {
+                                try {
+                                    Thread.sleep(200L * (attempt + 1)); // Block the current thread for the backoff period
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                }
+                                return sendRequestWithRetryAsync(httpRequest, attempt + 1);
+                            });
+                } else {
+                    System.err.println("Request permanently failed after " + MAX_RETRIES + " attempts.");
+                    return CompletableFuture.completedFuture(HttpURLConnection.HTTP_INTERNAL_ERROR);
+                }
+            }
+        }).exceptionally(ex -> {
+            System.err.println("Request failed: " + ex.getMessage() + " (attempt " + (attempt + 1) + ")");
+            if (attempt < MAX_RETRIES - 1) {
+                try {
+                    Thread.sleep(200L * (attempt + 1)); // Synchronous sleep before retry
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return sendRequestWithSyncRetryAsync_(httpRequest, attempt + 1).join(); // Retry synchronously
+            } else {
+                System.err.println("Request permanently failed after " + MAX_RETRIES + " attempts.");
+            }
+            return HttpURLConnection.HTTP_INTERNAL_ERROR;
+        });
     }
 }

@@ -1,9 +1,8 @@
-package edu.northeastern.clientpart2;
+package edu.northeastern.clientsold;
 
 import com.google.gson.Gson;
-import edu.northeastern.common.CsvWriterThread;
 import edu.northeastern.common.RandomRequest;
-import edu.northeastern.utils.ServerUtils;
+import edu.northeastern.utils.ConfigUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -18,15 +17,14 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SkiersApiLoadTestSync {
+public class SkiersApiLoadTestSyncP1 {
     // Global constants for the load test
     static final int TOTAL_REQUEST_COUNT = 200_000; // Total number of POST requests to send to the server
     static final int PHASE1_THREAD_COUNT = 32; // The number of consumer threads sending requests for phase 1
     static final int PHASE1_PER_THREAD_REQUEST_COUNT = 1000; // The number of POST requests to be sent by consumer threads of phase 1
-    static final int PHASE2_THREAD_COUNT = 1000; // The number of consumer threads sending requests for phase 2
+    static final int PHASE2_THREAD_COUNT = 100; // The number of consumer threads sending requests for phase 2
     static final int MAX_RETRIES = 5; // The maximum number of retries of each request
     static final int REQUEST_BUFFER_SIZE = 1000; // The buffer size of the http request content, kept as small as possible
-    static final int METRICS_BUFFER_SIZE = 5000; // The buffer size of metrics queued
 
     // Notice that phase 1 is completed when any one of the phase 1 threads finishes send and receiving all PHASE1_PER_THREAD_REQUEST_COUNT requests, not when all of them finish
     static final Lock lock = new ReentrantLock(); // Lock used to acquire phase1Completion
@@ -41,15 +39,10 @@ public class SkiersApiLoadTestSync {
     // Shared synchronous HTTP client and related objects
     static HttpClient syncHttpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(10)).build();
     static final Gson gson = new Gson();
-    static final String serverUrl = ServerUtils.getServerUrl();
+    static final String serverUrl = ConfigUtils.getServerUrl();
 
-    // Thread-safe collection to store request metrics
-    static final BlockingQueue<String[]> metricsBuffer = new LinkedBlockingQueue<>(METRICS_BUFFER_SIZE);
-    static final String CSV_FILE = "request_metrics.csv";
-
-    public static void main(String[] args) throws InterruptedException, IOException {
+    public static void main(String[] args) throws InterruptedException {
         postLoadTestThreadPool();
-        CsvWriterThread.calculateMetrics(CSV_FILE);
     }
 
     // POST Load testing with ExecutorService
@@ -63,10 +56,6 @@ public class SkiersApiLoadTestSync {
         ExecutorService producerExecutor = Executors.newSingleThreadExecutor();
         producerExecutor.submit(new ProducerThread(requestBuffer));
         producerExecutor.shutdown();
-
-        // CSV Writer thread
-        Thread csvWriterThread = new Thread(new CsvWriterThread(metricsBuffer, CSV_FILE));
-        csvWriterThread.start();
 
         // Create an ExecutorService for consumer tasks
         int totalConsumerThreads = PHASE1_THREAD_COUNT + PHASE2_THREAD_COUNT;
@@ -104,10 +93,6 @@ public class SkiersApiLoadTestSync {
         }
         // Wait for all consumer tasks to finish
         latch.await();
-
-        // Signal the CSV writer to finish
-        metricsBuffer.put(new String[]{"EOF"});
-        csvWriterThread.join();
 
         long endTime = System.currentTimeMillis();
         System.out.println("Total successful request: " + successRequests.get());
@@ -151,8 +136,6 @@ public class SkiersApiLoadTestSync {
             }
             long et = System.currentTimeMillis();
             totalResponseTime.getAndAdd(et - st);
-            String[] record = {String.valueOf(st), "POST", String.valueOf(et - st), String.valueOf(statusCode)};
-            metricsBuffer.put(record);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
