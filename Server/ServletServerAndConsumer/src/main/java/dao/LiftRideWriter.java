@@ -8,7 +8,7 @@ import utils.DBUtils;
 import java.sql.*;
 import java.util.*;
 
-public class LiftRideDAO {
+public class LiftRideWriter {
     private final Configuration config;
     private final Connection conn;
     private final PreparedStatement stmt;
@@ -17,7 +17,7 @@ public class LiftRideDAO {
     private final List<Long> deliveryTags = new ArrayList<>();
     private final Channel channel; // Associated RabbitMQ channel, per channel per DB writer pattern
 
-    public LiftRideDAO(Configuration config, Channel channel) throws SQLException {
+    public LiftRideWriter(Configuration config, Channel channel) throws SQLException {
         this.config = config;
         this.channel = channel;
         this.conn = DriverManager.getConnection(config.MYSQL_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD);

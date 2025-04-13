@@ -3,7 +3,7 @@ package writeservice;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.rabbitmq.client.*;
-import dao.LiftRideDAO;
+import dao.LiftRideWriter;
 import model.Configuration;
 import model.LiftRideEventMsg;
 import utils.ConfigUtils;
@@ -23,7 +23,7 @@ public class SkiersWriteService {
     private static final Gson gson = new Gson();
     private static final List<Connection> mqConnections = new ArrayList<>();
     // Global list to hold all DBWriter instances
-    private static final List<LiftRideDAO> dbWriters = new ArrayList<>();
+    private static final List<LiftRideWriter> dbWriters = new ArrayList<>();
     // Shared flush scheduler for all DBWriters
     private static final ScheduledExecutorService flushScheduler = Executors.newSingleThreadScheduledExecutor();
 
@@ -71,7 +71,7 @@ public class SkiersWriteService {
 
     private static void setupFlushScheduler() {
         flushScheduler.scheduleAtFixedRate(() -> {
-            for (LiftRideDAO writer : dbWriters) {
+            for (LiftRideWriter writer : dbWriters) {
                 try {
                     writer.flush();
                 } catch (SQLException e) {
@@ -86,9 +86,9 @@ public class SkiersWriteService {
         Channel channel = connection.createChannel();
         channel.basicQos(config.PREFETCH_COUNT);
 
-        LiftRideDAO dbWriter;
+        LiftRideWriter dbWriter;
         try {
-            dbWriter = new LiftRideDAO(config, channel);
+            dbWriter = new LiftRideWriter(config, channel);
             dbWriters.add(dbWriter);
         } catch (SQLException e) {
             channel.close();
@@ -124,7 +124,7 @@ public class SkiersWriteService {
             }
         }
         System.out.println("RabbitMQ connection shutting down.");
-        for (LiftRideDAO writer : dbWriters) {
+        for (LiftRideWriter writer : dbWriters) {
             writer.close();
         }
         System.out.println("MySQL connection shutting down.");
