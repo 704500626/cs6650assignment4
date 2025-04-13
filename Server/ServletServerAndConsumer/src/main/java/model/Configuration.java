@@ -15,6 +15,11 @@ public class Configuration {
     public String MYSQL_USERNAME = "admin";
     public String MYSQL_PASSWORD = "admin";
     public String MYSQL_INSERT_SQL = "INSERT INTO LiftRides (skier_id, resort_id, season_id, day_id, lift_id, ride_time) VALUES (?, ?, ?, ?, ?, ?)";
+    public String MYSQL_GET_UNIQUE_SKIERS_SQL = "SELECT COUNT(DISTINCT skier_id) AS unique_skiers FROM LiftRides WHERE resort_id = ? AND season_id = ? AND day_id = ?";
+    public String MYSQL_GET_DAILY_VERTICAL_SQL = "SELECT SUM(10 * lift_id) AS total_vertical FROM LiftRides WHERE skier_id = ? AND resort_id = ? AND season_id = ? AND day_id = ?";
+    public String MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_1 = "SELECT season_id, SUM(lift_id * 10) AS total_vertical FROM LiftRides WHERE skier_id = ? AND resort_id = ? AND season_id = ? GROUP BY season_id";
+    public String MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_2 = "SELECT season_id, SUM(lift_id * 10) AS total_vertical FROM LiftRides WHERE skier_id = ? AND resort_id = ? GROUP BY season_id";
+    public int MYSQL_MAX_POOL_SIZE = 16;
     public int MYSQL_BATCH_SIZE = 100;
     public int MYSQL_FLUSH_INTERVAL_MS = 500;
 
@@ -76,6 +81,12 @@ public class Configuration {
         MYSQL_USERNAME = properties.getProperty("MYSQL_USERNAME");
         MYSQL_PASSWORD = properties.getProperty("MYSQL_PASSWORD");
         MYSQL_INSERT_SQL = properties.getProperty("MYSQL_INSERT_SQL");
+        MYSQL_GET_UNIQUE_SKIERS_SQL = properties.getProperty("MYSQL_GET_UNIQUE_SKIERS_SQL");
+        MYSQL_GET_DAILY_VERTICAL_SQL = properties.getProperty("MYSQL_GET_DAILY_VERTICAL_SQL");
+        MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_1 = properties.getProperty("MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_1");
+        MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_2 = properties.getProperty("MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_2");
+
+        MYSQL_MAX_POOL_SIZE = Integer.parseInt(properties.getProperty("MYSQL_MAX_POOL_SIZE"));
         MYSQL_BATCH_SIZE = Integer.parseInt(properties.getProperty("MYSQL_BATCH_SIZE"));
         MYSQL_FLUSH_INTERVAL_MS = Integer.parseInt(properties.getProperty("MYSQL_FLUSH_INTERVAL_MS"));
 
