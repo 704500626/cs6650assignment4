@@ -1,4 +1,4 @@
-package servlet;
+package writeservlet;
 
 import com.google.gson.Gson;
 import model.Configuration;
@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class SkierServlet extends HttpServlet {
+public class SkierWriteServlet extends HttpServlet {
     private static final Gson gson = new Gson();
     private Configuration config;
     private RateLimiter rateLimiter;
@@ -85,31 +85,6 @@ public class SkierServlet extends HttpServlet {
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.write(gson.toJson(new ResponseMsg("Invalid inputs: malformed JSON in request body")));
-        }
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        res.setContentType("text/plain");
-        String urlPath = req.getPathInfo(); // "/7/seasons/2025/days/1/skiers/96541"
-        if (!RequestValidator.isUrlValid(urlPath)) {
-            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            res.getWriter().write("Invalid inputs: invalid URL or parameters");
-            return;
-        }
-        try {
-            String[] urlParts = urlPath.split("/");
-            int resortID = Integer.parseInt(urlParts[1]);
-            String seasonID = urlParts[3];
-            int dayID = Integer.parseInt(urlParts[5]);
-            int skierID = Integer.parseInt(urlParts[7]);
-            if (!RequestValidator.validateParameters(resortID, seasonID, dayID, skierID)) {
-                res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                res.getWriter().write("Invalid inputs: invalid parameter values");
-            }
-        } catch (NumberFormatException e) {
-            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            res.getWriter().write("Invalid inputs: invalid parameter values");
         }
     }
 

@@ -1,4 +1,4 @@
-package consumer;
+package writeservice;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -18,8 +18,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class SkiersConsumer {
-    private static final Configuration config = ConfigUtils.getConfigurationForConsumer();
+public class SkiersWriteService {
+    private static final Configuration config = ConfigUtils.getConfigurationForLiftRideService();
     private static final Gson gson = new Gson();
     private static final List<Connection> mqConnections = new ArrayList<>();
     // Global list to hold all DBWriter instances

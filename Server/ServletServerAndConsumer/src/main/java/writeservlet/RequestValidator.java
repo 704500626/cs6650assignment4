@@ -1,4 +1,4 @@
-package servlet;
+package writeservlet;
 
 import com.google.gson.Gson;
 import model.LiftRide;

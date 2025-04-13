@@ -9,7 +9,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class ConfigUtils {
-    public static Configuration getConfigurationForConsumer() {
+    public static Configuration getConfigurationForLiftRideService() {
         try (InputStream input = ConfigUtils.class.getClassLoader().getResourceAsStream("config.properties")) {
             if (input == null) {
                 System.out.println("Sorry, unable to find config.properties");
