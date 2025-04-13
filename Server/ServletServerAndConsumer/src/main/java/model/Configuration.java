@@ -49,6 +49,14 @@ public class Configuration {
     public int RABBITMQ_FLUSH_INTERVAL_MS = 500;  // Flush acknowledgments every 500ms
     public int NUM_CHANNELS_PER_QUEUE = 5; // Number of channels created for each queue
 
+    public String REDIS_HOST;
+    public int REDIS_PORT;
+
+    public String REDIS_KEY_SKIER_DAY_SUMMARY;
+    public String REDIS_KEY_RESORT_DAY_SKIERS;
+    public String REDIS_KEY_TOTAL_VERTICAL;
+
+
     public Configuration() {}
 
     public Configuration(Properties properties) {
@@ -100,5 +108,21 @@ public class Configuration {
         RABBITMQ_BATCH_SIZE = Integer.parseInt(properties.getProperty("RABBITMQ_BATCH_SIZE"));
         RABBITMQ_FLUSH_INTERVAL_MS = Integer.parseInt(properties.getProperty("RABBITMQ_FLUSH_INTERVAL_MS"));
         NUM_CHANNELS_PER_QUEUE = Integer.parseInt(properties.getProperty("NUM_CHANNELS_PER_QUEUE"));
+
+        REDIS_HOST = properties.getProperty("REDIS_HOST");
+        REDIS_PORT = Integer.parseInt(properties.getProperty("REDIS_PORT"));
+
+
+        REDIS_KEY_SKIER_DAY_SUMMARY = properties.getProperty("REDIS_KEY_SKIER_DAY_SUMMARY");
+        REDIS_KEY_RESORT_DAY_SKIERS = properties.getProperty("REDIS_KEY_RESORT_DAY_SKIERS");
+        REDIS_KEY_TOTAL_VERTICAL = properties.getProperty("REDIS_KEY_TOTAL_VERTICAL");
+    }
+
+    public String getREDIS_HOST() {
+        return REDIS_HOST;
+    }
+
+    public int getREDIS_PORT() {
+        return REDIS_PORT;
     }
 }

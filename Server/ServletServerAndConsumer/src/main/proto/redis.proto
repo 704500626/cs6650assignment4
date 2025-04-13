@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package redisquery;
+
+// Define the gRPC service
+service RedisQueryService {
+  rpc GetSkierSummary (SkierSummaryRequest) returns (SkierSummaryResponse);
+}
+
+// Request message
+message SkierSummaryRequest {
+  int32 skierId = 1;
+  int32 resortId = 2;
+  string seasonId = 3;
+  int32 dayId = 4;
+}
+
+// Response message
+message SkierSummaryResponse {
+  int32 vertical = 1;
+  int32 rides = 2;
+}

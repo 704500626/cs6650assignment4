@@ -1,11 +1,13 @@
 package readservlet;
 
+import cacheservice.RedisManager;
 import com.google.gson.Gson;
 import model.Configuration;
 import model.LiftRideEventMsg;
 import model.ResponseMsg;
 import ratelimiter.RateLimiter;
 import ratelimiter.TokenBucketRateLimiter;
+import readservice.SkiersReadService;
 import utils.ConfigUtils;
 import writeservlet.RabbitMQPublisher;
 import writeservlet.RequestValidator;
@@ -45,6 +47,7 @@ public class SkierReadServlet extends HttpServlet {
                 res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 res.getWriter().write("Invalid inputs: invalid parameter values");
             }
+
         } catch (NumberFormatException e) {
             res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             res.getWriter().write("Invalid inputs: invalid parameter values");
