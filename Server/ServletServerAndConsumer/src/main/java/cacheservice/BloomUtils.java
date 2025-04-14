@@ -18,4 +18,3 @@ public class BloomUtils {
     jedis.bfAdd(FILTER_NAME, String.valueOf(skierId));
   }
 }
-

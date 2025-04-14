@@ -36,9 +36,6 @@ public class RabbitMQPublisher {
             queueNames.add(config.EXCHANGE_NAME + "_queue_" + i);
         }
         monitorPool = Executors.newFixedThreadPool(config.QUEUE_MONITOR_THREAD_COUNT);
-        for (int q = 0; q < config.NUM_QUEUES; q++) {
-            queueNames.add(config.EXCHANGE_NAME + "_queue_" + q);
-        }
         try {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(config.RABBITMQ_HOST);

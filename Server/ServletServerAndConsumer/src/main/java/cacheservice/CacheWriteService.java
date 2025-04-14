@@ -2,6 +2,7 @@ package cacheservice;
 
 import java.util.List;
 import model.Configuration;
+import model.SkierVertical;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPooled;
 import skierread.SkierReadServiceOuterClass.VerticalRecord;
@@ -55,7 +56,6 @@ public class CacheWriteService {
 
   /**
    * This method writes the skier's vertical list to the cache.
-   * Redis Key: total:{resort}:{season}:{skier}
    * Field: SeasonID
    * Value: verticals
    * Support VerticalListResponse read method from cache read service
