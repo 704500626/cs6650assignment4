@@ -89,5 +89,4 @@ public class SkierVertical {
     }
     return o.toString().replace("\n", "\n    ");
   }
-
 }

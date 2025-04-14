@@ -1,11 +1,13 @@
 package cacheservice;
 
-import java.util.List;
+import java.util.Map;
 import model.Configuration;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPooled;
 import skierread.SkierReadServiceOuterClass.SkierCountResponse;
 import skierread.SkierReadServiceOuterClass.VerticalIntResponse;
 import skierread.SkierReadServiceOuterClass.VerticalListResponse;
+import skierread.SkierReadServiceOuterClass.VerticalRecord;
 import utils.ConfigUtils;
 
 public class CacheReadService {
@@ -27,7 +29,7 @@ public class CacheReadService {
         .replace("{season}", seasonId)
         .replace("{day}", String.valueOf(dayId));
 
-    try (Jedis jedis = RedisManager.getJedis()) {
+    try (JedisPooled jedis = RedisManager.getPool()) {
 
       if (!jedis.exists(key)) {
         return null;
@@ -44,7 +46,7 @@ public class CacheReadService {
    */
   public static VerticalIntResponse getTotalVerticalOfSkierFromCache(int resortId, String seasonId, int dayId, int skierId) {
     if (!BloomUtils.mightContainSkier(skierId)) {
-      return VerticalIntResponse.newBuilder().setTotalVertical(-1).build();
+      return null;
     }
 
     String key = config.REDIS_KEY_VERTICAL_WITH_SKIER
@@ -53,7 +55,7 @@ public class CacheReadService {
         .replace("{season}", seasonId)
         .replace("{day}", String.valueOf(dayId));
 
-    try (Jedis jedis = RedisManager.getJedis()) {
+    try (JedisPooled jedis = RedisManager.getPool()) {
       String verticalStr = jedis.hget(key, "vertical");
 
       if (verticalStr == null) {
@@ -72,21 +74,42 @@ public class CacheReadService {
 
     // if specific season is provided, return total vertical for that season for the skier
     // if no season is provided, return total vertical for all seasons for the skier
-    VerticalListResponse.Builder responseBuilder = VerticalListResponse.newBuilder();
-    return null;
-    //TODO
-  }
+    if (!BloomUtils.mightContainSkier(skierId)) {
+      return null;
+    }
 
-  /**
-   * get the total vertical for the skier the specified resort. If no season is specified, return all seasons
-   * provided: resort_id, season_id, skier_id
-   */
-  public static VerticalListResponse getTotalVerticalFromCache(int resortId, int skierId) {
+    String key = config.REDIS_KEY_VERTICAL_COUNT
+        .replace("{skier}", String.valueOf(skierId))
+        .replace("{resort}", String.valueOf(resortId));
 
-    // if specific season is provided, return total vertical for that season for the skier
-    // if no season is provided, return total vertical for all seasons for the skier
-    VerticalListResponse.Builder responseBuilder = VerticalListResponse.newBuilder();
-    return null;
-    //TODO
+    System.out.println("Generated Redis Key: " + key);
+
+    VerticalListResponse.Builder response = VerticalListResponse.newBuilder();
+    try (JedisPooled jedis = RedisManager.getPool()) {
+      if (seasonId == null || seasonId.isEmpty()) {
+        // Return total verticals for all seasons (all fields in the hash)
+        Map<String, String> allSeasonVerticals = jedis.hgetAll(key);
+        for (Map.Entry<String, String> entry : allSeasonVerticals.entrySet()) {
+          response.addRecords(
+              VerticalRecord.newBuilder()
+                  .setSeasonID(entry.getKey())
+                  .setTotalVertical(Integer.parseInt(entry.getValue()))
+                  .build()
+          );
+        }
+      } else {
+        // Return only the vertical for the specific season
+        String verticalStr = jedis.hget(key, seasonId);
+        if (verticalStr != null) {
+          response.addRecords(
+              VerticalRecord.newBuilder()
+                  .setSeasonID(seasonId)
+                  .setTotalVertical(Integer.parseInt(verticalStr))
+                  .build()
+          );
+        }
+      }
+    }
+    return response.build();
   }
 }

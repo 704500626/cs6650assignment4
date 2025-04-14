@@ -59,8 +59,7 @@ public class Configuration {
 
     public String REDIS_KEY_UNIQUE_SKIER_COUNT;
     public String REDIS_KEY_VERTICAL_WITH_SKIER;
-    public String REDIS_KEY_VERTICAL_COUNT_WITHOUT_SEASON;
-    public String REDIS_KEY_VERTICAL_COUNT_WITH_SEASON;
+    public String REDIS_KEY_VERTICAL_COUNT;
 
 
     public Configuration() {}
@@ -125,9 +124,8 @@ public class Configuration {
         REDIS_PORT = Integer.parseInt(properties.getProperty("REDIS_PORT"));
 
         REDIS_KEY_UNIQUE_SKIER_COUNT = properties.getProperty("REDIS_KEY_UNIQUE_SKIER_COUNT");
-        REDIS_KEY_VERTICAL_WITH_SKIER= properties.getProperty("REDIS_KEY_UNIQUE_SKIER_COUNT_WITH_SKIER");
-        REDIS_KEY_VERTICAL_COUNT_WITHOUT_SEASON = properties.getProperty("REDIS_KEY_VERTICAL_COUNT_WITHOUT_SEASON");
-        REDIS_KEY_VERTICAL_COUNT_WITH_SEASON = properties.getProperty("REDIS_KEY_VERTICAL_COUNT_WITH_SEASON");
+        REDIS_KEY_VERTICAL_WITH_SKIER= properties.getProperty("REDIS_KEY_VERTICAL_WITH_SKIER");
+        REDIS_KEY_VERTICAL_COUNT = properties.getProperty("REDIS_KEY_VERTICAL_COUNT");
     }
 
     public String getREDIS_HOST() {

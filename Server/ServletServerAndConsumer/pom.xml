@@ -87,11 +87,6 @@
             <artifactId>HikariCP</artifactId>
             <version>5.1.0</version>
         </dependency>
-        <dependency>
-            <groupId>redis.clients</groupId>
-            <artifactId>jedis</artifactId>
-            <version>5.2.0</version>
-        </dependency>
     </dependencies>
     <build>
         <finalName>cs6650Server</finalName>
