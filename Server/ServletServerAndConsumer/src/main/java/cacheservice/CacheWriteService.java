@@ -1,44 +1,49 @@
 package cacheservice;
 
+import java.util.List;
 import model.Configuration;
+import model.SkierVertical;
 import redis.clients.jedis.Jedis;
 import utils.ConfigUtils;
 
 public class CacheWriteService {
   private static final Configuration config = ConfigUtils.getConfigurationForLiftRideService();
 
+  public CacheWriteService() {
+    // Initialize Redis connection pool
+    RedisManager.init(config);
+  }
+
   /**
-    * This method writes the skier day summary to the cache.
-    * Redis Key: summary:{skier}:{resort}:{season}:{day} (HASH)
-    * Fields: vertical += liftId * 10, rides += 1
-    * Supports:
-    * CacheReadService.getUniqueSkierCount(int resortId, String seasonId, int dayId, int skierId)
-    * CacheReadService.getTotalVertical(int resortId, String seasonId, int skierId)
+   * This method writes the unique skier count to the cache.
+   * Redis Key: {resort}:{season}:{day}
+   * Support SkierCountResponse read method from cache read service
    */
 
-  public static void writeSkierDaySummary(int skierId, int resortId, String seasonId, int dayId, int liftId) {
-    return;
-    //TODO
-  }
-  /**
-    * This method writes the skier to resort day to the cache.
-    * Redis Key: resort:{resort}:{season}:{day}:skiers (SET)
-    * This one support getUniqueSkierCountFromCache method from cache read service
-   */
-  public static void writeSkierToResortDay(int skierId, int resortId, String seasonId, int dayId) {
+  public static void writeUniqueSkierCount(int resortId, String seasonId, int dayId, int vertical) {
     return;
     //TODO
   }
 
   /**
-   * This method writes the skier's season total vertical to the cache.
-   * Redis Key: total:{skier}:{resort}:{season} (STRING or HASH)
-   * Value: incremented by liftId * 10
-   * Supports:
-   * CacheReadService.getTotalVertical(...) if it is implemented to read pre-aggregated totals.
+   * This method writes the skier's vertical to the cache.
+   * Redis Key: skier:{skier}:{resort}:{season}:{day}
+   * Support VerticalIntResponse read method from cache read service
+   */
+  public static void writeVertical(int resortId, String seasonId, int dayId, int skierId, SkierVertical vertical) {
+    return;
+    //TODO
+  }
+
+  /**
+   * This method writes the skier's vertical list to the cache.
+   * Redis Key: skier:{skier}:{resort}
+   * Field: SeasonID
+   * Value: verticals
+   * Support VerticalListResponse read method from cache read service
    */
 
-  public static void writeSkierSeasonTotal(int skierId, int resortId, String seasonId, int liftId) {
+  public static void writeVerticalList(int skierId, int resortId, String seasonId, List<SkierVertical> verticals) {
     return;
     //TODO
   }

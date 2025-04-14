@@ -11,19 +11,19 @@ service SkierReadService {
 message VerticalRequest {
   int32 skierID = 1;
   int32 resortID = 2;
-  int32 seasonID = 3;
+  string seasonID = 3;
 }
 
 message SkierDayRequest {
   int32 resortID = 1;
-  int32 seasonID = 2;
+  string seasonID = 2;
   int32 dayID = 3;
   int32 skierID = 4;
 }
 
 message ResortDayRequest {
   int32 resortID = 1;
-  int32 seasonID = 2;
+  string seasonID = 2;
   int32 dayID = 3;
 }
 

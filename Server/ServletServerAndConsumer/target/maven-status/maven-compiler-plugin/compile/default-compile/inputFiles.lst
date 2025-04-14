@@ -1,15 +1,14 @@
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/messagequeue/RMQChannelFactory.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/target/generated-sources/protobuf/grpc-java/skierread/SkierReadServiceGrpc.java
-/Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/target/generated-sources/protobuf/java/redisquery/Redis.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/dao/LiftRideReader.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/cacheservice/CacheReadService.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/model/SkierVerticalResorts.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/writeservlet/RabbitMQPublisher.java
+/Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/readservice/SkierReadServiceImpl.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/readservlet/SkierReadServlet.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/model/LiftRide.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/utils/DBUtils.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/model/SkierVertical.java
-/Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/target/generated-sources/protobuf/grpc-java/redisquery/RedisQueryServiceGrpc.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/ratelimiter/TokenBucketRateLimiter.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/utils/RandomUtils.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/messagequeue/RMQChannelPool.java
@@ -19,6 +18,7 @@
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/model/ResponseMsg.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/utils/ConfigUtils.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/readservice/SkiersReadService.java
+/Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/cacheservice/BloomUtils.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/cacheservice/CacheWriteService.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/cacheservice/RedisManager.java
 /Users/shibo/cs6650assignment4/Server/ServletServerAndConsumer/src/main/java/writeservlet/RequestValidator.java

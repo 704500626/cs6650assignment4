@@ -32,10 +32,16 @@ public final class SkierReadServiceOuterClass {
     int getResortID();
 
     /**
-     * <code>int32 seasonID = 3;</code>
+     * <code>string seasonID = 3;</code>
      * @return The seasonID.
      */
-    int getSeasonID();
+    java.lang.String getSeasonID();
+    /**
+     * <code>string seasonID = 3;</code>
+     * @return The bytes for seasonID.
+     */
+    com.google.protobuf.ByteString
+        getSeasonIDBytes();
   }
   /**
    * Protobuf type {@code skierread.VerticalRequest}
@@ -50,6 +56,7 @@ public final class SkierReadServiceOuterClass {
       super(builder);
     }
     private VerticalRequest() {
+      seasonID_ = "";
     }
 
     @java.lang.Override
@@ -95,14 +102,42 @@ public final class SkierReadServiceOuterClass {
     }
 
     public static final int SEASONID_FIELD_NUMBER = 3;
-    private int seasonID_ = 0;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object seasonID_ = "";
     /**
-     * <code>int32 seasonID = 3;</code>
+     * <code>string seasonID = 3;</code>
      * @return The seasonID.
      */
     @java.lang.Override
-    public int getSeasonID() {
-      return seasonID_;
+    public java.lang.String getSeasonID() {
+      java.lang.Object ref = seasonID_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        seasonID_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string seasonID = 3;</code>
+     * @return The bytes for seasonID.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getSeasonIDBytes() {
+      java.lang.Object ref = seasonID_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        seasonID_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     private byte memoizedIsInitialized = -1;
@@ -125,8 +160,8 @@ public final class SkierReadServiceOuterClass {
       if (resortID_ != 0) {
         output.writeInt32(2, resortID_);
       }
-      if (seasonID_ != 0) {
-        output.writeInt32(3, seasonID_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(seasonID_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, seasonID_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -145,9 +180,8 @@ public final class SkierReadServiceOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(2, resortID_);
       }
-      if (seasonID_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(3, seasonID_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(seasonID_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, seasonID_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
@@ -168,8 +202,8 @@ public final class SkierReadServiceOuterClass {
           != other.getSkierID()) return false;
       if (getResortID()
           != other.getResortID()) return false;
-      if (getSeasonID()
-          != other.getSeasonID()) return false;
+      if (!getSeasonID()
+          .equals(other.getSeasonID())) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
@@ -186,7 +220,7 @@ public final class SkierReadServiceOuterClass {
       hash = (37 * hash) + RESORTID_FIELD_NUMBER;
       hash = (53 * hash) + getResortID();
       hash = (37 * hash) + SEASONID_FIELD_NUMBER;
-      hash = (53 * hash) + getSeasonID();
+      hash = (53 * hash) + getSeasonID().hashCode();
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -320,7 +354,7 @@ public final class SkierReadServiceOuterClass {
         bitField0_ = 0;
         skierID_ = 0;
         resortID_ = 0;
-        seasonID_ = 0;
+        seasonID_ = "";
         return this;
       }
 
@@ -415,8 +449,10 @@ public final class SkierReadServiceOuterClass {
         if (other.getResortID() != 0) {
           setResortID(other.getResortID());
         }
-        if (other.getSeasonID() != 0) {
-          setSeasonID(other.getSeasonID());
+        if (!other.getSeasonID().isEmpty()) {
+          seasonID_ = other.seasonID_;
+          bitField0_ |= 0x00000004;
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
@@ -454,11 +490,11 @@ public final class SkierReadServiceOuterClass {
                 bitField0_ |= 0x00000002;
                 break;
               } // case 16
-              case 24: {
-                seasonID_ = input.readInt32();
+              case 26: {
+                seasonID_ = input.readStringRequireUtf8();
                 bitField0_ |= 0x00000004;
                 break;
-              } // case 24
+              } // case 26
               default: {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                   done = true; // was an endgroup tag
@@ -540,34 +576,74 @@ public final class SkierReadServiceOuterClass {
         return this;
       }
 
-      private int seasonID_ ;
+      private java.lang.Object seasonID_ = "";
       /**
-       * <code>int32 seasonID = 3;</code>
+       * <code>string seasonID = 3;</code>
        * @return The seasonID.
        */
-      @java.lang.Override
-      public int getSeasonID() {
-        return seasonID_;
+      public java.lang.String getSeasonID() {
+        java.lang.Object ref = seasonID_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          seasonID_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
-       * <code>int32 seasonID = 3;</code>
+       * <code>string seasonID = 3;</code>
+       * @return The bytes for seasonID.
+       */
+      public com.google.protobuf.ByteString
+          getSeasonIDBytes() {
+        java.lang.Object ref = seasonID_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          seasonID_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string seasonID = 3;</code>
        * @param value The seasonID to set.
        * @return This builder for chaining.
        */
-      public Builder setSeasonID(int value) {
-
+      public Builder setSeasonID(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
         seasonID_ = value;
         bitField0_ |= 0x00000004;
         onChanged();
         return this;
       }
       /**
-       * <code>int32 seasonID = 3;</code>
+       * <code>string seasonID = 3;</code>
        * @return This builder for chaining.
        */
       public Builder clearSeasonID() {
+        seasonID_ = getDefaultInstance().getSeasonID();
         bitField0_ = (bitField0_ & ~0x00000004);
-        seasonID_ = 0;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string seasonID = 3;</code>
+       * @param value The bytes for seasonID to set.
+       * @return This builder for chaining.
+       */
+      public Builder setSeasonIDBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        seasonID_ = value;
+        bitField0_ |= 0x00000004;
         onChanged();
         return this;
       }
@@ -646,10 +722,16 @@ public final class SkierReadServiceOuterClass {
     int getResortID();
 
     /**
-     * <code>int32 seasonID = 2;</code>
+     * <code>string seasonID = 2;</code>
      * @return The seasonID.
      */
-    int getSeasonID();
+    java.lang.String getSeasonID();
+    /**
+     * <code>string seasonID = 2;</code>
+     * @return The bytes for seasonID.
+     */
+    com.google.protobuf.ByteString
+        getSeasonIDBytes();
 
     /**
      * <code>int32 dayID = 3;</code>
@@ -676,6 +758,7 @@ public final class SkierReadServiceOuterClass {
       super(builder);
     }
     private SkierDayRequest() {
+      seasonID_ = "";
     }
 
     @java.lang.Override
@@ -710,14 +793,42 @@ public final class SkierReadServiceOuterClass {
     }
 
     public static final int SEASONID_FIELD_NUMBER = 2;
-    private int seasonID_ = 0;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object seasonID_ = "";
     /**
-     * <code>int32 seasonID = 2;</code>
+     * <code>string seasonID = 2;</code>
      * @return The seasonID.
      */
     @java.lang.Override
-    public int getSeasonID() {
-      return seasonID_;
+    public java.lang.String getSeasonID() {
+      java.lang.Object ref = seasonID_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        seasonID_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string seasonID = 2;</code>
+     * @return The bytes for seasonID.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getSeasonIDBytes() {
+      java.lang.Object ref = seasonID_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        seasonID_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int DAYID_FIELD_NUMBER = 3;
@@ -759,8 +870,8 @@ public final class SkierReadServiceOuterClass {
       if (resortID_ != 0) {
         output.writeInt32(1, resortID_);
       }
-      if (seasonID_ != 0) {
-        output.writeInt32(2, seasonID_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(seasonID_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, seasonID_);
       }
       if (dayID_ != 0) {
         output.writeInt32(3, dayID_);
@@ -781,9 +892,8 @@ public final class SkierReadServiceOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, resortID_);
       }
-      if (seasonID_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(2, seasonID_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(seasonID_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, seasonID_);
       }
       if (dayID_ != 0) {
         size += com.google.protobuf.CodedOutputStream
@@ -810,8 +920,8 @@ public final class SkierReadServiceOuterClass {
 
       if (getResortID()
           != other.getResortID()) return false;
-      if (getSeasonID()
-          != other.getSeasonID()) return false;
+      if (!getSeasonID()
+          .equals(other.getSeasonID())) return false;
       if (getDayID()
           != other.getDayID()) return false;
       if (getSkierID()
@@ -830,7 +940,7 @@ public final class SkierReadServiceOuterClass {
       hash = (37 * hash) + RESORTID_FIELD_NUMBER;
       hash = (53 * hash) + getResortID();
       hash = (37 * hash) + SEASONID_FIELD_NUMBER;
-      hash = (53 * hash) + getSeasonID();
+      hash = (53 * hash) + getSeasonID().hashCode();
       hash = (37 * hash) + DAYID_FIELD_NUMBER;
       hash = (53 * hash) + getDayID();
       hash = (37 * hash) + SKIERID_FIELD_NUMBER;
@@ -967,7 +1077,7 @@ public final class SkierReadServiceOuterClass {
         super.clear();
         bitField0_ = 0;
         resortID_ = 0;
-        seasonID_ = 0;
+        seasonID_ = "";
         dayID_ = 0;
         skierID_ = 0;
         return this;
@@ -1064,8 +1174,10 @@ public final class SkierReadServiceOuterClass {
         if (other.getResortID() != 0) {
           setResortID(other.getResortID());
         }
-        if (other.getSeasonID() != 0) {
-          setSeasonID(other.getSeasonID());
+        if (!other.getSeasonID().isEmpty()) {
+          seasonID_ = other.seasonID_;
+          bitField0_ |= 0x00000002;
+          onChanged();
         }
         if (other.getDayID() != 0) {
           setDayID(other.getDayID());
@@ -1104,11 +1216,11 @@ public final class SkierReadServiceOuterClass {
                 bitField0_ |= 0x00000001;
                 break;
               } // case 8
-              case 16: {
-                seasonID_ = input.readInt32();
+              case 18: {
+                seasonID_ = input.readStringRequireUtf8();
                 bitField0_ |= 0x00000002;
                 break;
-              } // case 16
+              } // case 18
               case 24: {
                 dayID_ = input.readInt32();
                 bitField0_ |= 0x00000004;
@@ -1168,34 +1280,74 @@ public final class SkierReadServiceOuterClass {
         return this;
       }
 
-      private int seasonID_ ;
+      private java.lang.Object seasonID_ = "";
       /**
-       * <code>int32 seasonID = 2;</code>
+       * <code>string seasonID = 2;</code>
        * @return The seasonID.
        */
-      @java.lang.Override
-      public int getSeasonID() {
-        return seasonID_;
+      public java.lang.String getSeasonID() {
+        java.lang.Object ref = seasonID_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          seasonID_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
-       * <code>int32 seasonID = 2;</code>
+       * <code>string seasonID = 2;</code>
+       * @return The bytes for seasonID.
+       */
+      public com.google.protobuf.ByteString
+          getSeasonIDBytes() {
+        java.lang.Object ref = seasonID_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          seasonID_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string seasonID = 2;</code>
        * @param value The seasonID to set.
        * @return This builder for chaining.
        */
-      public Builder setSeasonID(int value) {
-
+      public Builder setSeasonID(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
         seasonID_ = value;
         bitField0_ |= 0x00000002;
         onChanged();
         return this;
       }
       /**
-       * <code>int32 seasonID = 2;</code>
+       * <code>string seasonID = 2;</code>
        * @return This builder for chaining.
        */
       public Builder clearSeasonID() {
+        seasonID_ = getDefaultInstance().getSeasonID();
         bitField0_ = (bitField0_ & ~0x00000002);
-        seasonID_ = 0;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string seasonID = 2;</code>
+       * @param value The bytes for seasonID to set.
+       * @return This builder for chaining.
+       */
+      public Builder setSeasonIDBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        seasonID_ = value;
+        bitField0_ |= 0x00000002;
         onChanged();
         return this;
       }
@@ -1338,10 +1490,16 @@ public final class SkierReadServiceOuterClass {
     int getResortID();
 
     /**
-     * <code>int32 seasonID = 2;</code>
+     * <code>string seasonID = 2;</code>
      * @return The seasonID.
      */
-    int getSeasonID();
+    java.lang.String getSeasonID();
+    /**
+     * <code>string seasonID = 2;</code>
+     * @return The bytes for seasonID.
+     */
+    com.google.protobuf.ByteString
+        getSeasonIDBytes();
 
     /**
      * <code>int32 dayID = 3;</code>
@@ -1362,6 +1520,7 @@ public final class SkierReadServiceOuterClass {
       super(builder);
     }
     private ResortDayRequest() {
+      seasonID_ = "";
     }
 
     @java.lang.Override
@@ -1396,14 +1555,42 @@ public final class SkierReadServiceOuterClass {
     }
 
     public static final int SEASONID_FIELD_NUMBER = 2;
-    private int seasonID_ = 0;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object seasonID_ = "";
     /**
-     * <code>int32 seasonID = 2;</code>
+     * <code>string seasonID = 2;</code>
      * @return The seasonID.
      */
     @java.lang.Override
-    public int getSeasonID() {
-      return seasonID_;
+    public java.lang.String getSeasonID() {
+      java.lang.Object ref = seasonID_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        seasonID_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string seasonID = 2;</code>
+     * @return The bytes for seasonID.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getSeasonIDBytes() {
+      java.lang.Object ref = seasonID_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        seasonID_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int DAYID_FIELD_NUMBER = 3;
@@ -1434,8 +1621,8 @@ public final class SkierReadServiceOuterClass {
       if (resortID_ != 0) {
         output.writeInt32(1, resortID_);
       }
-      if (seasonID_ != 0) {
-        output.writeInt32(2, seasonID_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(seasonID_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, seasonID_);
       }
       if (dayID_ != 0) {
         output.writeInt32(3, dayID_);
@@ -1453,9 +1640,8 @@ public final class SkierReadServiceOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, resortID_);
       }
-      if (seasonID_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(2, seasonID_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(seasonID_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, seasonID_);
       }
       if (dayID_ != 0) {
         size += com.google.protobuf.CodedOutputStream
@@ -1478,8 +1664,8 @@ public final class SkierReadServiceOuterClass {
 
       if (getResortID()
           != other.getResortID()) return false;
-      if (getSeasonID()
-          != other.getSeasonID()) return false;
+      if (!getSeasonID()
+          .equals(other.getSeasonID())) return false;
       if (getDayID()
           != other.getDayID()) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
@@ -1496,7 +1682,7 @@ public final class SkierReadServiceOuterClass {
       hash = (37 * hash) + RESORTID_FIELD_NUMBER;
       hash = (53 * hash) + getResortID();
       hash = (37 * hash) + SEASONID_FIELD_NUMBER;
-      hash = (53 * hash) + getSeasonID();
+      hash = (53 * hash) + getSeasonID().hashCode();
       hash = (37 * hash) + DAYID_FIELD_NUMBER;
       hash = (53 * hash) + getDayID();
       hash = (29 * hash) + getUnknownFields().hashCode();
@@ -1631,7 +1817,7 @@ public final class SkierReadServiceOuterClass {
         super.clear();
         bitField0_ = 0;
         resortID_ = 0;
-        seasonID_ = 0;
+        seasonID_ = "";
         dayID_ = 0;
         return this;
       }
@@ -1724,8 +1910,10 @@ public final class SkierReadServiceOuterClass {
         if (other.getResortID() != 0) {
           setResortID(other.getResortID());
         }
-        if (other.getSeasonID() != 0) {
-          setSeasonID(other.getSeasonID());
+        if (!other.getSeasonID().isEmpty()) {
+          seasonID_ = other.seasonID_;
+          bitField0_ |= 0x00000002;
+          onChanged();
         }
         if (other.getDayID() != 0) {
           setDayID(other.getDayID());
@@ -1761,11 +1949,11 @@ public final class SkierReadServiceOuterClass {
                 bitField0_ |= 0x00000001;
                 break;
               } // case 8
-              case 16: {
-                seasonID_ = input.readInt32();
+              case 18: {
+                seasonID_ = input.readStringRequireUtf8();
                 bitField0_ |= 0x00000002;
                 break;
-              } // case 16
+              } // case 18
               case 24: {
                 dayID_ = input.readInt32();
                 bitField0_ |= 0x00000004;
@@ -1820,34 +2008,74 @@ public final class SkierReadServiceOuterClass {
         return this;
       }
 
-      private int seasonID_ ;
+      private java.lang.Object seasonID_ = "";
       /**
-       * <code>int32 seasonID = 2;</code>
+       * <code>string seasonID = 2;</code>
        * @return The seasonID.
        */
-      @java.lang.Override
-      public int getSeasonID() {
-        return seasonID_;
+      public java.lang.String getSeasonID() {
+        java.lang.Object ref = seasonID_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          seasonID_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
-       * <code>int32 seasonID = 2;</code>
+       * <code>string seasonID = 2;</code>
+       * @return The bytes for seasonID.
+       */
+      public com.google.protobuf.ByteString
+          getSeasonIDBytes() {
+        java.lang.Object ref = seasonID_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          seasonID_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string seasonID = 2;</code>
        * @param value The seasonID to set.
        * @return This builder for chaining.
        */
-      public Builder setSeasonID(int value) {
-
+      public Builder setSeasonID(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
         seasonID_ = value;
         bitField0_ |= 0x00000002;
         onChanged();
         return this;
       }
       /**
-       * <code>int32 seasonID = 2;</code>
+       * <code>string seasonID = 2;</code>
        * @return This builder for chaining.
        */
       public Builder clearSeasonID() {
+        seasonID_ = getDefaultInstance().getSeasonID();
         bitField0_ = (bitField0_ & ~0x00000002);
-        seasonID_ = 0;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string seasonID = 2;</code>
+       * @param value The bytes for seasonID to set.
+       * @return This builder for chaining.
+       */
+      public Builder setSeasonIDBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        seasonID_ = value;
+        bitField0_ |= 0x00000002;
         onChanged();
         return this;
       }
@@ -4351,11 +4579,11 @@ public final class SkierReadServiceOuterClass {
     java.lang.String[] descriptorData = {
       "\n\026SkierReadService.proto\022\tskierread\"F\n\017V" +
       "erticalRequest\022\017\n\007skierID\030\001 \001(\005\022\020\n\010resor" +
-      "tID\030\002 \001(\005\022\020\n\010seasonID\030\003 \001(\005\"U\n\017SkierDayR" +
+      "tID\030\002 \001(\005\022\020\n\010seasonID\030\003 \001(\t\"U\n\017SkierDayR" +
       "equest\022\020\n\010resortID\030\001 \001(\005\022\020\n\010seasonID\030\002 \001" +
-      "(\005\022\r\n\005dayID\030\003 \001(\005\022\017\n\007skierID\030\004 \001(\005\"E\n\020Re" +
+      "(\t\022\r\n\005dayID\030\003 \001(\005\022\017\n\007skierID\030\004 \001(\005\"E\n\020Re" +
       "sortDayRequest\022\020\n\010resortID\030\001 \001(\005\022\020\n\010seas" +
-      "onID\030\002 \001(\005\022\r\n\005dayID\030\003 \001(\005\"9\n\016VerticalRec" +
+      "onID\030\002 \001(\t\022\r\n\005dayID\030\003 \001(\005\"9\n\016VerticalRec" +
       "ord\022\020\n\010seasonID\030\001 \001(\t\022\025\n\rtotalVertical\030\002" +
       " \001(\005\"B\n\024VerticalListResponse\022*\n\007records\030" +
       "\001 \003(\0132\031.skierread.VerticalRecord\",\n\023Vert" +
