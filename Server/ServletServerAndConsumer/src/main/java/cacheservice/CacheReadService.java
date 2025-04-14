@@ -42,12 +42,12 @@ public class CacheReadService {
    * provided: resort_id, season_id, day_id, skier_id
    * return total vertical
    */
-  public static VerticalIntResponse getUniqueSkierCountFromCache(int resortId, String seasonId, int dayId, int skierId) {
+  public static VerticalIntResponse getTotalVerticalOfSkierFromCache(int resortId, String seasonId, int dayId, int skierId) {
     if (!BloomUtils.mightContainSkier(skierId)) {
       return VerticalIntResponse.newBuilder().setTotalVertical(-1).build();
     }
 
-    String key = config.REDIS_KEY_UNIQUE_SKIER_COUNT_WITH_SKIER
+    String key = config.REDIS_KEY_VERTICAL_WITH_SKIER
         .replace("{skier}", String.valueOf(skierId))
         .replace("{resort}", String.valueOf(resortId))
         .replace("{season}", seasonId)

@@ -20,7 +20,7 @@ public class CacheWriteService {
    * Support SkierCountResponse read method from cache read service
    */
 
-  public static void writeUniqueSkierCount(int resortId, String seasonId, int dayId, int vertical) {
+  public static void writeUniqueSkierCountToCache(int resortId, String seasonId, int dayId, int vertical) {
     return;
     //TODO
   }
@@ -30,7 +30,7 @@ public class CacheWriteService {
    * Redis Key: skier:{skier}:{resort}:{season}:{day}
    * Support VerticalIntResponse read method from cache read service
    */
-  public static void writeVertical(int resortId, String seasonId, int dayId, int skierId, SkierVertical vertical) {
+  public static void writeVerticalToCache(int resortId, String seasonId, int dayId, int skierId, SkierVertical vertical) {
     return;
     //TODO
   }
@@ -43,7 +43,12 @@ public class CacheWriteService {
    * Support VerticalListResponse read method from cache read service
    */
 
-  public static void writeVerticalList(int skierId, int resortId, String seasonId, List<SkierVertical> verticals) {
+  public static void writeVerticalListToCache(int skierId, int resortId, String seasonId, List<SkierVertical> verticals) {
+    return;
+    //TODO
+  }
+
+  public static void writeVerticalListToCache(int skierId, int resortId, List<SkierVertical> verticals) {
     return;
     //TODO
   }
