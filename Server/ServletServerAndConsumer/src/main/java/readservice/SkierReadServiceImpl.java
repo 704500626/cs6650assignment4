@@ -33,25 +33,22 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
     response = CacheReadService.getTotalVertical(request.getResortID(), request.getSeasonID(),
         request.getSkierID());
     if (response == null) { // if Not in Redis, get from the DB and then write to Redis
-      if (request.getSeasonID().isEmpty()) {
-        try {
+      try {
+        if (request.getSeasonID().isEmpty()) {
           response = liftRideReader.getSkierResortTotals(request.getSkierID(),
               request.getResortID());
-        } catch (SQLException e) {
-          throw new RuntimeException(e);
-        }
-      } else {
-        try {
+        } else {
           response = liftRideReader.getSkierResortTotals(request.getSkierID(),
               request.getResortID(), request.getSeasonID());
-        } catch (SQLException e) {
-          throw new RuntimeException(e);
         }
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
       }
+      // write to Redis
       CacheWriteService.writeVerticalList(request.getSkierID(),
-                                          request.getResortID(),
-                                          request.getSeasonID(),
-                                          response.getRecordsList());
+          request.getResortID(),
+          request.getSeasonID(),
+          response.getRecordsList());
     }
     responseObserver.onNext(response);
     responseObserver.onCompleted();
@@ -70,10 +67,10 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
             request.getDayID(), request.getSkierID());
         // write to Redis
         CacheWriteService.writeVertical(request.getResortID(),
-                                        request.getSeasonID(),
-                                        request.getDayID(),
-                                        request.getSkierID(),
-                                        response.getTotalVertical());
+            request.getSeasonID(),
+            request.getDayID(),
+            request.getSkierID(),
+            response.getTotalVertical());
       } catch (SQLException e) {
         throw new RuntimeException(e);
       }
@@ -87,7 +84,8 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
       StreamObserver<SkierCountResponse> responseObserver) {
     SkierCountResponse response = null;
     // Check if in the Redis Cache
-    response = CacheReadService.getUniqueSkierCountFromCache(request.getResortID(), request.getSeasonID(),
+    response = CacheReadService.getUniqueSkierCountFromCache(request.getResortID(),
+        request.getSeasonID(),
         request.getDayID());
     if (response == null) { // if Not in Redis, get from the DB and then write to Redis
       try {
@@ -96,10 +94,10 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
             request.getDayID());
         // write to Redis
         CacheWriteService.writeUniqueSkierCount(
-                                        request.getResortID(),
-                                        request.getSeasonID(),
-                                        request.getDayID(),
-                                        response.getSkierCount());
+            request.getResortID(),
+            request.getSeasonID(),
+            request.getDayID(),
+            response.getSkierCount());
       } catch (SQLException e) {
         throw new RuntimeException(e);
       }
