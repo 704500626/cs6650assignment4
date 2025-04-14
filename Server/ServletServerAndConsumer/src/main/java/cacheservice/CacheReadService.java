@@ -63,37 +63,29 @@ public class CacheReadService {
     // if specific season is provided, return total vertical for that season for the skier
     // if no season is provided, return total vertical for all seasons for the skier
 
+
     String key = RedisManager.config.REDIS_KEY_VERTICAL_COUNT
         .replace("{skier}", String.valueOf(skierId))
-        .replace("{resort}", String.valueOf(resortId));
+        .replace("{resort}", String.valueOf(resortId))
+        .replace("{season}", seasonId);
 
     VerticalListResponse.Builder response = VerticalListResponse.newBuilder();
     JedisPooled jedis = RedisManager.getPool();
+
     if (!jedis.exists(key)) {
       return null;
     }
-    if (seasonId == null || seasonId.isEmpty()) {
-      // Return total verticals for all seasons (all fields in the hash)
-      Map<String, String> allSeasonVerticals = jedis.hgetAll(key);
-      for (Map.Entry<String, String> entry : allSeasonVerticals.entrySet()) {
-        response.addRecords(
-            VerticalRecord.newBuilder()
-                .setSeasonID(entry.getKey())
-                .setTotalVertical(Integer.parseInt(entry.getValue()))
-                .build()
-        );
-      }
-    } else {
-      // Return only the vertical for the specific season
-      String verticalStr = jedis.hget(key, seasonId);
-      if (verticalStr != null) {
-        response.addRecords(
-            VerticalRecord.newBuilder()
-                .setSeasonID(seasonId)
-                .setTotalVertical(Integer.parseInt(verticalStr))
-                .build()
-        );
-      }
+
+    Map<String, String> verticals = jedis.hgetAll(key);
+    for (Map.Entry<String, String> entry : verticals.entrySet()) {
+      String seasonIdKey = entry.getKey();
+      String verticalStr = entry.getValue();
+      long vertical = Long.parseLong(verticalStr);
+      VerticalRecord record = VerticalRecord.newBuilder()
+          .setSeasonID(seasonIdKey)
+          .setTotalVertical((int) vertical)
+          .build();
+      response.addRecords(record);
     }
   return response.build();
   }
