@@ -1,5 +1,7 @@
 package readservice;
 
+import cacheservice.CacheReadService;
+import cacheservice.CacheWriteService;
 import dao.LiftRideReader;
 import io.grpc.stub.StreamObserver;
 import java.sql.SQLException;
@@ -16,20 +18,27 @@ import utils.ConfigUtils;
 
 public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceImplBase {
   private static final Configuration config = ConfigUtils.getConfigurationForLiftRideService();
+//  private static final CacheReadService cacheReadService = new CacheReadService();
+//  private static final CacheWriteService cacheWriteService = new CacheWriteService();
 
   private LiftRideReader liftRideReader = new LiftRideReader(config);
 
   @Override
   public void getTotalVertical(VerticalRequest request, StreamObserver<VerticalListResponse> responseObserver) {
-    VerticalRecord record = VerticalRecord.newBuilder()
-        .setSeasonID("2025")
-        .setTotalVertical(12000)
-        .build();
-
-    VerticalListResponse response = VerticalListResponse.newBuilder()
-        .addRecords(record)
-        .build();
-
+    VerticalListResponse response = null;
+    if (request.getSeasonID().isEmpty()) {
+      try {
+        response = liftRideReader.getSkierResortTotals(request.getSkierID(), request.getResortID());
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+    } else{
+      try {
+        response = liftRideReader.getSkierResortTotals(request.getSkierID(), request.getResortID(), request.getSeasonID());
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+    }
     responseObserver.onNext(response);
     responseObserver.onCompleted();
   }
@@ -37,6 +46,8 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
   @Override
   public void getSkierDayRides(SkierDayRequest request, StreamObserver<VerticalIntResponse> responseObserver) {
     VerticalIntResponse response = null;
+//     response = cacheReadService.getUniqueSkierCount(request.getResortID(), request.getSeasonID(),
+//         request.getDayID(), request.getSkierID());
     try {
       response = liftRideReader.getSkierDayVertical(request.getResortID(), request.getSeasonID(),
           request.getDayID(), request.getSkierID());
@@ -49,10 +60,12 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
 
   @Override
   public void getResortDaySkiers(ResortDayRequest request, StreamObserver<SkierCountResponse> responseObserver) {
-    SkierCountResponse response = SkierCountResponse.newBuilder()
-        .setSkierCount(120)
-        .build();
-
+    SkierCountResponse response = null;
+    try {
+      response = liftRideReader.getResortUniqueSkiers(request.getResortID(), request.getSeasonID(), request.getDayID());
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
     responseObserver.onNext(response);
     responseObserver.onCompleted();
   }
