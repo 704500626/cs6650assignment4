@@ -19,13 +19,13 @@ public class ConfigUtils {
                 if (springboot.equals("true")) {
                     serverUrl = properties.getProperty("local.springboot.url");
                 } else {
-                    serverUrl = properties.getProperty("local.servlet.url");
+                    serverUrl = properties.getProperty("local.writeservlet.url");
                 }
             } else {
                 if (springboot.equals("true")) {
                     serverUrl = properties.getProperty("remote.springboot.url");
                 } else {
-                    serverUrl = properties.getProperty("remote.servlet.url");
+                    serverUrl = properties.getProperty("remote.writeservlet.url");
                 }
             }
             System.out.println("Server URL: " + serverUrl);
