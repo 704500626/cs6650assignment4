@@ -9,12 +9,6 @@ import skierread.SkierReadServiceOuterClass.VerticalRecord;
 import utils.ConfigUtils;
 
 public class CacheWriteService {
-  private static final Configuration config = ConfigUtils.getConfigurationForLiftRideService();
-
-  public CacheWriteService() {
-    // Initialize Redis connection pool
-    RedisManager.init(config);
-  }
 
   /**
    * This method writes the unique skier count to the cache.
@@ -23,14 +17,14 @@ public class CacheWriteService {
    */
 
   public static void writeUniqueSkierCountToCache(int resortId, String seasonId, int dayId, int count) {
-    String key = config.REDIS_KEY_UNIQUE_SKIER_COUNT
+    String key = RedisManager.config.REDIS_KEY_UNIQUE_SKIER_COUNT
         .replace("{resort}", String.valueOf(resortId))
         .replace("{season}", seasonId)
         .replace("{day}", String.valueOf(dayId));
 
-    try (JedisPooled jedis = RedisManager.getPool()) {
-      jedis.set(key, String.valueOf(count));
-    }
+    JedisPooled jedis = RedisManager.getPool();
+    String status = jedis.set(key, String.valueOf(count));
+    System.out.println("Redis SET status: " + status);
   }
 
   /**
@@ -39,19 +33,14 @@ public class CacheWriteService {
    * Support VerticalIntResponse read method from cache read service
    */
   public static void writeVerticalToCache(int resortId, String seasonId, int dayId, int skierId, int vertical) {
-//    if (!BloomUtils.mightContainSkier(skierId)) {
-//      BloomUtils.addSkierToFilter(skierId);
-//    }
-
-    String key = config.REDIS_KEY_VERTICAL_WITH_SKIER
+    String key = RedisManager.config.REDIS_KEY_VERTICAL_WITH_SKIER
         .replace("{skier}", String.valueOf(skierId))
         .replace("{resort}", String.valueOf(resortId))
         .replace("{season}", seasonId)
         .replace("{day}", String.valueOf(dayId));
 
-    try (JedisPooled jedis = RedisManager.getPool()) {
-      jedis.set(key, String.valueOf(vertical));
-    }
+    JedisPooled jedis = RedisManager.getPool();
+    jedis.set(key, String.valueOf(vertical));
   }
 
   /**
@@ -62,14 +51,13 @@ public class CacheWriteService {
    */
 
   public static void writeVerticalListToCache(int skierId, int resortId, List<VerticalRecord> verticals) {
-    String key = config.REDIS_KEY_VERTICAL_COUNT
+    String key = RedisManager.config.REDIS_KEY_VERTICAL_COUNT
         .replace("{skier}", String.valueOf(skierId))
         .replace("{resort}", String.valueOf(resortId));
 
-    try (JedisPooled jedis = RedisManager.getPool()) {
-      for (VerticalRecord vertical : verticals) {
-        jedis.hset(key, vertical.getSeasonID(), String.valueOf(vertical.getTotalVertical()));
-      }
+    JedisPooled jedis = RedisManager.getPool();
+    for (VerticalRecord vertical : verticals) {
+      jedis.hset(key, vertical.getSeasonID(), String.valueOf(vertical.getTotalVertical()));
     }
   }
 }

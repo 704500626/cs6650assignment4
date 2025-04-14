@@ -6,13 +6,12 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.Protocol;
+import utils.ConfigUtils;
 
 public class RedisManager {
-  private static JedisPooled pool;
+  public static final Configuration config = ConfigUtils.getConfigurationForLiftRideService();
 
-  public static void init(Configuration config) {
-    pool = new JedisPooled(config.REDIS_HOST, config.REDIS_PORT);
-  }
+  private static JedisPooled pool = new JedisPooled(config.REDIS_HOST, config.REDIS_PORT);
 
   public static JedisPooled getPool() {
     return pool;
