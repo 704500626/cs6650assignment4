@@ -1,30 +1,20 @@
 package cacheservice;
 
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Protocol;
+import redis.clients.jedis.JedisPooled;
 
 public class BloomUtils {
+  private static final String FILTER_NAME = "skier:bf";
 
   public static boolean mightContainSkier(int skierId) {
-    try (Jedis jedis = RedisManager.getJedis()) {
-      String result = (String)jedis.sendCommand(Protocol.Command.valueOf("BF.EXISTS"), "skier:bf", String.valueOf(skierId));
-      return "1".equals(result);
-    }
+    JedisPooled jedis = RedisManager.getPool();
+    return jedis.bfExists(FILTER_NAME, String.valueOf(skierId));
   }
 
   public static void addSkierToFilter(int skierId) {
-    try (Jedis jedis = RedisManager.getJedis()) {
-      jedis.sendCommand(Protocol.Command.valueOf("BF.ADD"), "skier:bf", String.valueOf(skierId));
+    JedisPooled jedis = RedisManager.getPool();
+    if (!jedis.exists(FILTER_NAME)) {
+      jedis.bfReserve(FILTER_NAME, 0.01, 100000);
     }
-  }
-
-  public static void initSkierFilterIfNeeded() {
-    try (Jedis jedis = RedisManager.getJedis()) {
-      // Reserve only if not created (BF.RESERVE fails if already exists)
-      String result = (String)jedis.sendCommand(Protocol.Command.valueOf("BF.RESERVE"), "skier:bf", "0.01", "100000");
-      System.out.println("Bloom filter reserved: " + result);
-    } catch (Exception e) {
-      System.out.println("Bloom filter likely already exists.");
-    }
+    jedis.bfAdd(FILTER_NAME, String.valueOf(skierId));
   }
 }
