@@ -29,6 +29,7 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
     response = CacheReadService.getTotalVerticalFromCache(request.getResortID(), request.getSeasonID(),
         request.getSkierID());
     if (response == null) { // if Not in Redis, get from the DB and then write to Redis
+      System.out.println("The response came from the database");
       try {
         if (request.getSeasonID().isEmpty()) {
           response = liftRideReader.getSkierResortTotals(request.getSkierID(),
@@ -44,6 +45,8 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
       CacheWriteService.writeVerticalListToCache(request.getSkierID(),
           request.getResortID(),
           response.getRecordsList());
+    } else {
+      System.out.println("The response came from the cache");
     }
     responseObserver.onNext(response);
     responseObserver.onCompleted();
@@ -57,6 +60,7 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
     response = CacheReadService.getTotalVerticalOfSkierFromCache(request.getResortID(), request.getSeasonID(),
         request.getDayID(), request.getSkierID());
     if (response == null) { // if Not in Redis, get from the DB and then write to Redis
+      System.out.println("The response came from the database");
       try {
         response = liftRideReader.getSkierDayVertical(request.getResortID(), request.getSeasonID(),
             request.getDayID(), request.getSkierID());
@@ -69,6 +73,8 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
       } catch (SQLException e) {
         throw new RuntimeException(e);
       }
+    } else {
+      System.out.println("The response came from the cache");
     }
     responseObserver.onNext(response);
     responseObserver.onCompleted();
@@ -83,6 +89,7 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
         request.getSeasonID(),
         request.getDayID());
     if (response == null) { // if Not in Redis, get from the DB and then write to Redis
+      System.out.println("The response came from the database");
       try {
         response = liftRideReader.getResortUniqueSkiers(request.getResortID(),
             request.getSeasonID(),
@@ -96,6 +103,8 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
       } catch (SQLException e) {
         throw new RuntimeException(e);
       }
+    } else {
+      System.out.println("The response came from the cache");
     }
     responseObserver.onNext(response);
     responseObserver.onCompleted();
