@@ -12,9 +12,9 @@ import utils.ConfigUtils;
 public class RedisTest {
 
   public static void main(String[] args) {
-    Configuration config = ConfigUtils.getConfigurationForLiftRideService();
-
-    RedisManager.init(config);
+//    Configuration config = ConfigUtils.getConfigurationForLiftRideService();
+//
+//    RedisManager.init(config);
 
     CacheReadService cacheReadService = new CacheReadService();
 

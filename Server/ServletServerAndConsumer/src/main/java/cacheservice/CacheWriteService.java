@@ -38,9 +38,9 @@ public class CacheWriteService {
    * Support VerticalIntResponse read method from cache read service
    */
   public static void writeVerticalToCache(int resortId, String seasonId, int dayId, int skierId, int vertical) {
-    if (!BloomUtils.mightContainSkier(skierId)) {
-      BloomUtils.addSkierToFilter(skierId);
-    }
+//    if (!BloomUtils.mightContainSkier(skierId)) {
+//      BloomUtils.addSkierToFilter(skierId);
+//    }
 
     String key = config.REDIS_KEY_VERTICAL_WITH_SKIER
         .replace("{skier}", String.valueOf(skierId))

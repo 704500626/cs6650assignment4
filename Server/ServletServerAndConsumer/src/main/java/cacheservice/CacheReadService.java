@@ -45,9 +45,9 @@ public class CacheReadService {
    * return total vertical
    */
   public static VerticalIntResponse getTotalVerticalOfSkierFromCache(int resortId, String seasonId, int dayId, int skierId) {
-    if (!BloomUtils.mightContainSkier(skierId)) {
-      return null;
-    }
+//    if (!BloomUtils.mightContainSkier(skierId)) {
+//      return null;
+//    }
 
     String key = config.REDIS_KEY_VERTICAL_WITH_SKIER
         .replace("{skier}", String.valueOf(skierId))
@@ -74,9 +74,9 @@ public class CacheReadService {
 
     // if specific season is provided, return total vertical for that season for the skier
     // if no season is provided, return total vertical for all seasons for the skier
-    if (!BloomUtils.mightContainSkier(skierId)) {
-      return null;
-    }
+//    if (!BloomUtils.mightContainSkier(skierId)) {
+//      return null;
+//    }
 
     String key = config.REDIS_KEY_VERTICAL_COUNT
         .replace("{skier}", String.valueOf(skierId))
