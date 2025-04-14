@@ -4,6 +4,8 @@ import java.util.List;
 import model.Configuration;
 import model.SkierVertical;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPooled;
+import skierread.SkierReadServiceOuterClass.VerticalRecord;
 import utils.ConfigUtils;
 
 public class CacheWriteService {
@@ -20,9 +22,15 @@ public class CacheWriteService {
    * Support SkierCountResponse read method from cache read service
    */
 
-  public static void writeUniqueSkierCount(int resortId, String seasonId, int dayId, int vertical) {
-    return;
-    //TODO
+  public static void writeUniqueSkierCountToCache(int resortId, String seasonId, int dayId, int count) {
+    String key = config.REDIS_KEY_UNIQUE_SKIER_COUNT
+        .replace("{resort}", String.valueOf(resortId))
+        .replace("{season}", seasonId)
+        .replace("{day}", String.valueOf(dayId));
+
+    try (JedisPooled jedis = RedisManager.getPool()) {
+      jedis.set(key, String.valueOf(count));
+    }
   }
 
   /**
@@ -30,21 +38,38 @@ public class CacheWriteService {
    * Redis Key: skier:{skier}:{resort}:{season}:{day}
    * Support VerticalIntResponse read method from cache read service
    */
-  public static void writeVertical(int resortId, String seasonId, int dayId, int skierId, SkierVertical vertical) {
-    return;
-    //TODO
+  public static void writeVerticalToCache(int resortId, String seasonId, int dayId, int skierId, int vertical) {
+//    if (!BloomUtils.mightContainSkier(skierId)) {
+//      BloomUtils.addSkierToFilter(skierId);
+//    }
+
+    String key = config.REDIS_KEY_VERTICAL_WITH_SKIER
+        .replace("{skier}", String.valueOf(skierId))
+        .replace("{resort}", String.valueOf(resortId))
+        .replace("{season}", seasonId)
+        .replace("{day}", String.valueOf(dayId));
+
+    try (JedisPooled jedis = RedisManager.getPool()) {
+      jedis.set(key, String.valueOf(vertical));
+    }
   }
 
   /**
    * This method writes the skier's vertical list to the cache.
-   * Redis Key: skier:{skier}:{resort}
    * Field: SeasonID
    * Value: verticals
    * Support VerticalListResponse read method from cache read service
    */
 
-  public static void writeVerticalList(int skierId, int resortId, String seasonId, List<SkierVertical> verticals) {
-    return;
-    //TODO
+  public static void writeVerticalListToCache(int skierId, int resortId, List<VerticalRecord> verticals) {
+    String key = config.REDIS_KEY_VERTICAL_COUNT
+        .replace("{skier}", String.valueOf(skierId))
+        .replace("{resort}", String.valueOf(resortId));
+
+    try (JedisPooled jedis = RedisManager.getPool()) {
+      for (VerticalRecord vertical : verticals) {
+        jedis.hset(key, vertical.getSeasonID(), String.valueOf(vertical.getTotalVertical()));
+      }
+    }
   }
 }
