@@ -2,6 +2,7 @@ package cacheservice;
 
 import java.util.List;
 import model.Configuration;
+import model.SkierVertical;
 import redis.clients.jedis.Jedis;
 import utils.ConfigUtils;
 
@@ -29,7 +30,7 @@ public class CacheWriteService {
    * Redis Key: skier:{skier}:{resort}:{season}:{day}
    * Support VerticalIntResponse read method from cache read service
    */
-  public static void writeVertical(int resortId, String seasonId, int dayId, int skierId, int vertical) {
+  public static void writeVertical(int resortId, String seasonId, int dayId, int skierId, SkierVertical vertical) {
     return;
     //TODO
   }
@@ -42,7 +43,7 @@ public class CacheWriteService {
    * Support VerticalListResponse read method from cache read service
    */
 
-  public static void writeVerticalList(int skierId, int resortId, String seasonId, List<Integer> verticals) {
+  public static void writeVerticalList(int skierId, int resortId, String seasonId, List<SkierVertical> verticals) {
     return;
     //TODO
   }
