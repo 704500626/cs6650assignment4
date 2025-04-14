@@ -43,8 +43,7 @@ public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceI
       }
       // write to Redis
       CacheWriteService.writeVerticalListToCache(request.getSkierID(),
-          request.getResortID(),
-          response.getRecordsList());
+          request.getResortID(), response.getRecordsList(), request.getSeasonID());
     } else {
       System.out.println("The response came from the cache");
     }
