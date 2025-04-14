@@ -50,10 +50,11 @@ public class CacheWriteService {
    * Support VerticalListResponse read method from cache read service
    */
 
-  public static void writeVerticalListToCache(int skierId, int resortId, List<VerticalRecord> verticals) {
+  public static void writeVerticalListToCache(int skierId, int resortId, List<VerticalRecord> verticals, String seasonId) {
     String key = RedisManager.config.REDIS_KEY_VERTICAL_COUNT
         .replace("{skier}", String.valueOf(skierId))
-        .replace("{resort}", String.valueOf(resortId));
+        .replace("{resort}", String.valueOf(resortId))
+        .replace("{season}", seasonId);
 
     JedisPooled jedis = RedisManager.getPool();
     for (VerticalRecord vertical : verticals) {
