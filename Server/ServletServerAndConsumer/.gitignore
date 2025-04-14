@@ -23,8 +23,9 @@ bin/
 /.nb-gradle/
 
 .idea
-.target/
+target/
 .out/
+cs6650Server.iml
 
 ### VS Code ###
 .vscode/
