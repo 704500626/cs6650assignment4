@@ -68,8 +68,10 @@ public class Configuration {
         String local = properties.getProperty("local");
         if (local.equals("true")) {
             RABBITMQ_HOST = "localhost";
+            REDIS_HOST = "localhost";
         } else {
             RABBITMQ_HOST = properties.getProperty("RABBITMQ_HOST");
+            REDIS_HOST = properties.getProperty("REDIS_HOST");
         }
         RABBITMQ_USERNAME = properties.getProperty("RABBITMQ_USERNAME");
         RABBITMQ_PASSWORD = properties.getProperty("RABBITMQ_PASSWORD");
@@ -120,9 +122,7 @@ public class Configuration {
         RABBITMQ_FLUSH_INTERVAL_MS = Integer.parseInt(properties.getProperty("RABBITMQ_FLUSH_INTERVAL_MS"));
         NUM_CHANNELS_PER_QUEUE = Integer.parseInt(properties.getProperty("NUM_CHANNELS_PER_QUEUE"));
 
-        REDIS_HOST = properties.getProperty("REDIS_HOST");
         REDIS_PORT = Integer.parseInt(properties.getProperty("REDIS_PORT"));
-
         REDIS_KEY_UNIQUE_SKIER_COUNT = properties.getProperty("REDIS_KEY_UNIQUE_SKIER_COUNT");
         REDIS_KEY_VERTICAL_WITH_SKIER= properties.getProperty("REDIS_KEY_VERTICAL_WITH_SKIER");
         REDIS_KEY_VERTICAL_COUNT = properties.getProperty("REDIS_KEY_VERTICAL_COUNT");

@@ -3,6 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
          version="4.0">
+    <!-- Skier Read Servlet (POST)-->
     <servlet>
         <servlet-name>SkierServlet</servlet-name>
         <servlet-class>writeservlet.SkierWriteServlet</servlet-class>
@@ -10,5 +11,15 @@
     <servlet-mapping>
         <servlet-name>SkierServlet</servlet-name>
         <url-pattern>/skiers/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- Skier Read Servlet (GET)-->
+    <servlet>
+        <servlet-name>SkierReadServlet</servlet-name>
+        <servlet-class>readservlet.SkierReadServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>SkierReadServlet</servlet-name>
+        <url-pattern>/skiers/read/*</url-pattern>
     </servlet-mapping>
 </web-app>
