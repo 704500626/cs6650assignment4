@@ -10,7 +10,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class SkierReadServer {
+public class LiftRideReadServer {
     private static final Configuration config = ConfigUtils.getConfigurationForService();
 
     public static void main(String[] args) throws Exception {
@@ -23,7 +23,7 @@ public class SkierReadServer {
                 new LinkedBlockingQueue<>(config.LIFTRIDE_READ_SERVICE_QUEUE_SIZE)  // request queue size (like acceptCount)
         );
 
-        SkierReadServiceImpl skierReadService = new SkierReadServiceImpl(config);
+        LiftRideReadServiceImpl skierReadService = new LiftRideReadServiceImpl(config);
         Server server = ServerBuilder.forPort(config.LIFTRIDE_READ_SERVICE_PORT)
                 .executor(executor)
                 .addService(skierReadService)

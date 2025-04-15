@@ -9,12 +9,12 @@ import model.Configuration;
 
 import java.util.List;
 
-public class SkierReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceImplBase {
+public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceImplBase {
     private final LiftRideReader dbReader;
     private final RedisCacheClient cache;
     private final Configuration config;
 
-    public SkierReadServiceImpl(Configuration config) {
+    public LiftRideReadServiceImpl(Configuration config) {
         this.config = config;
         this.dbReader = new LiftRideReader(config);
         this.cache = new RedisCacheClient(config);
