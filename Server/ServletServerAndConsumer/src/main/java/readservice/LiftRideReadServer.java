@@ -11,8 +11,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class LiftRideReadServer {
-    private static final Configuration config = ConfigUtils.getConfigurationForService();
-
     public static void main(String[] args) throws Exception {
         Configuration config = ConfigUtils.getConfigurationForService();
 
