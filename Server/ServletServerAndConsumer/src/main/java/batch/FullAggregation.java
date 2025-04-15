@@ -42,7 +42,7 @@ public class FullAggregation implements AggregationStrategy {
     private void aggregateUniqueSkiers(Connection conn) throws SQLException {
         try (PreparedStatement stmt =
                      conn.prepareStatement(config.AGGREGATION_FULL_UNIQUE_SKIERS_SQL)) {
-            String tmpBloom = BatchUtils.getTempKey(config.REDIS_BLOOM_FILTER_UNIQUE_SKIERS);
+            String tmpBloom = config.REDIS_BLOOM_FILTER_UNIQUE_SKIERS + ":full";
             cache.createFilter(tmpBloom, config.REDIS_BLOOM_FILTER_CAPACITY, config.REDIS_BLOOM_FILTER_ERROR_RATE);
 
             ResultSet rs = stmt.executeQuery();
@@ -76,7 +76,7 @@ public class FullAggregation implements AggregationStrategy {
 
     private void aggregateDailyVerticals(Connection conn) throws SQLException {
         try (PreparedStatement stmt = conn.prepareStatement(config.AGGREGATION_FULL_DAILY_VERTICAL_SQL)) {
-            String tmpBloom = BatchUtils.getTempKey(config.REDIS_BLOOM_FILTER_DAILY_VERTICAL);
+            String tmpBloom = config.REDIS_BLOOM_FILTER_DAILY_VERTICAL + ":full";
             cache.createFilter(tmpBloom, config.REDIS_BLOOM_FILTER_CAPACITY, config.REDIS_BLOOM_FILTER_ERROR_RATE);
             ResultSet rs = stmt.executeQuery();
 
@@ -107,7 +107,7 @@ public class FullAggregation implements AggregationStrategy {
     // TODO combine this and aggregateAllSeasonVerticals
     private void aggregateSeasonVerticals(Connection conn) throws SQLException {
         try (PreparedStatement stmt = conn.prepareStatement(config.AGGREGATION_FULL_SEASON_VERTICAL_SQL)) {
-            String tmpBloom = BatchUtils.getTempKey(config.REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL);
+            String tmpBloom = config.REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL + ":full";
             cache.createFilter(tmpBloom, config.REDIS_BLOOM_FILTER_CAPACITY, config.REDIS_BLOOM_FILTER_ERROR_RATE);
             ResultSet rs = stmt.executeQuery();
             Map<String, String> updateMap = new HashMap<>();
@@ -136,7 +136,7 @@ public class FullAggregation implements AggregationStrategy {
     private void aggregateAllSeasonVerticals(Connection conn) throws SQLException {
         try (PreparedStatement stmt = conn.prepareStatement(config.AGGREGATION_FULL_SEASON_VERTICAL_SQL)) {
             ResultSet rs = stmt.executeQuery();
-            String tmpBloom = BatchUtils.getTempKey(config.REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS);
+            String tmpBloom = config.REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS + ":full";
             cache.createFilter(tmpBloom, config.REDIS_BLOOM_FILTER_CAPACITY, config.REDIS_BLOOM_FILTER_ERROR_RATE);
             // Map to accumulate values per key.
             Map<String, List<LiftRideReadProto.VerticalRecord>> aggregateMap = new HashMap<>();

@@ -53,6 +53,7 @@ public class RabbitMQPublisher {
                     setupChannel.queueBind(queueName, config.RABBITMQ_EXCHANGE_NAME, queueName);
                 }
             }
+            System.out.println("Connected to RabbitMQ: " + config.RABBITMQ_HOST);
             startQueueMonitoring();
         } catch (Exception e) {
             throw new Exception("Failed to initialize RabbitMQ connection", e);

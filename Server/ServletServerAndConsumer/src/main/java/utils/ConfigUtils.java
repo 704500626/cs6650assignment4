@@ -22,7 +22,7 @@ public class ConfigUtils {
         try {
             // 0. Try loading from external static path (EC2-specific)
             if (Files.exists(Paths.get(EXTERNAL_CONFIG_PATH))) {
-                System.out.println("[Config] Loading servlet config from external path: " + EXTERNAL_CONFIG_PATH);
+                System.out.println("[Config] Loading config from external path: " + EXTERNAL_CONFIG_PATH);
                 try (InputStream input = Files.newInputStream(Paths.get(EXTERNAL_CONFIG_PATH))) {
                     Properties props = new Properties();
                     props.load(input);
@@ -59,7 +59,7 @@ public class ConfigUtils {
         try {
             // 1. Try loading from external static path (EC2-specific)
             if (Files.exists(Paths.get(EXTERNAL_CONFIG_PATH))) {
-                System.out.println("[Config] Loading servlet config from external path: " + EXTERNAL_CONFIG_PATH);
+                System.out.println("[Config] Loading config from external path: " + EXTERNAL_CONFIG_PATH);
                 try (InputStream input = Files.newInputStream(Paths.get(EXTERNAL_CONFIG_PATH))) {
                     Properties props = new Properties();
                     props.load(input);

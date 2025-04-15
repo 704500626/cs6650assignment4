@@ -25,10 +25,10 @@ public class BloomOnlyAggregation implements AggregationStrategy {
         System.out.println("[BloomOnlyAggregation] Rebuilding Bloom filters...");
 
         // Temporary keys
-        String bf1Temp = BatchUtils.getTempKey(config.REDIS_BLOOM_FILTER_UNIQUE_SKIERS);
-        String bf2Temp = BatchUtils.getTempKey(config.REDIS_BLOOM_FILTER_DAILY_VERTICAL);
-        String bf3Temp = BatchUtils.getTempKey(config.REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL);
-        String bf4Temp = BatchUtils.getTempKey(config.REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS);
+        String bf1Temp = config.REDIS_BLOOM_FILTER_UNIQUE_SKIERS + ":bloom_only";
+        String bf2Temp = config.REDIS_BLOOM_FILTER_DAILY_VERTICAL + ":bloom_only";
+        String bf3Temp = config.REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL + ":bloom_only";
+        String bf4Temp = config.REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS + ":bloom_only";
 
         cache.createFilter(bf1Temp, config.REDIS_BLOOM_FILTER_CAPACITY, config.REDIS_BLOOM_FILTER_ERROR_RATE);
         cache.createFilter(bf2Temp, config.REDIS_BLOOM_FILTER_CAPACITY, config.REDIS_BLOOM_FILTER_ERROR_RATE);
