@@ -2,6 +2,9 @@ syntax = "proto3";
 
 package skierread;
 
+option java_package = "grpc";
+option java_outer_classname = "LiftRideReadProto";
+
 service SkierReadService {
   rpc GetTotalVertical (VerticalRequest) returns (VerticalListResponse);
   rpc GetSkierDayRides (SkierDayRequest) returns (VerticalIntResponse);

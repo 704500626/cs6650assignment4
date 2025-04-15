@@ -2,8 +2,8 @@ package dao;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import grpc.LiftRideReadProto.*;
 import model.Configuration;
-import skierread.SkierReadServiceOuterClass.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,58 +31,49 @@ public class LiftRideReader {
         this.dataSource = new HikariDataSource(hikariConfig);
     }
 
-    public SkierCountResponse getResortUniqueSkiers(int resortId, String seasonId, int dayId) throws SQLException {
+    public int getResortUniqueSkiers(int resortId, String seasonId, int dayId) throws SQLException {
         try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(config.MYSQL_GET_UNIQUE_SKIERS_SQL)) {
             stmt.setInt(1, resortId);
             stmt.setString(2, seasonId);
             stmt.setInt(3, dayId);
-            int count = 0;
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) count = rs.getInt(1);
+                return rs.next() ? rs.getInt(1) : 0;
             }
-            return SkierCountResponse.newBuilder().setSkierCount(count).build();
         }
     }
 
-    public VerticalIntResponse getSkierDayVertical(int resortId, String seasonId, int dayId, int skierId) throws SQLException {
+    public int getSkierDayVertical(int resortId, String seasonId, int dayId, int skierId) throws SQLException {
         try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(config.MYSQL_GET_DAILY_VERTICAL_SQL)) {
             stmt.setInt(1, skierId);
             stmt.setInt(2, resortId);
             stmt.setString(3, seasonId);
             stmt.setInt(4, dayId);
-            int vertical = 0;
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) vertical = rs.getInt(1);
+                return rs.next() ? rs.getInt(1) : 0;
             }
-            return VerticalIntResponse.newBuilder().setTotalVertical(vertical).build();
         }
     }
 
-    public VerticalListResponse getSkierResortTotals(int skierId, int resortId) throws SQLException {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(config.MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_2)) {
+    public List<VerticalRecord> getSkierResortTotals(int skierId, int resortId, String seasonId) throws SQLException {
+        String sql;
+        boolean withSeason = seasonId != null && !seasonId.isEmpty();
+        if (withSeason) {
+            sql = config.MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_1;
+        } else {
+            sql = config.MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_2;
+        }
+
+        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, skierId);
             stmt.setInt(2, resortId);
+            if (withSeason) stmt.setString(3, seasonId);
+
             try (ResultSet rs = stmt.executeQuery()) {
                 List<VerticalRecord> result = new ArrayList<>();
                 while (rs.next()) {
                     result.add(VerticalRecord.newBuilder().setSeasonID(rs.getString(1)).setTotalVertical(rs.getInt(2)).build());
                 }
-                return  VerticalListResponse.newBuilder().addAllRecords(result).build();
-            }
-        }
-    }
-
-    public VerticalListResponse getSkierResortTotals(int skierId, int resortId, String seasonId) throws SQLException {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(config.MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_1)) {
-            stmt.setInt(1, skierId);
-            stmt.setInt(2, resortId);
-            stmt.setString(3, seasonId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                List<VerticalRecord> result = new ArrayList<>();
-                while (rs.next()) {
-                    result.add(VerticalRecord.newBuilder().setSeasonID(rs.getString(1)).setTotalVertical(rs.getInt(2)).build());
-                }
-                return  VerticalListResponse.newBuilder().addAllRecords(result).build();
+                return result;
             }
         }
     }

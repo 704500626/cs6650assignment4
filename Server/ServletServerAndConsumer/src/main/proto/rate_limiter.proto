@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ratelimiter;
+
+option java_package = "grpc";
+option java_outer_classname = "RateLimiterServiceProto";
+
+service RateLimiterService {
+  rpc Allow (RateLimiterRequest) returns (RateLimiterResponse);
+}
+
+message RateLimiterRequest {
+  string group_id = 1;        // logical group like "write_servlet_group"
+}
+
+message RateLimiterResponse {
+  bool allowed = 1;
+}

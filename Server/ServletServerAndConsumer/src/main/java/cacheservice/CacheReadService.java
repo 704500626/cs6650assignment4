@@ -1,14 +1,12 @@
 package cacheservice;
 
 import java.util.Map;
+
+import grpc.*;
+import grpc.LiftRideReadProto.*;
 import model.Configuration;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPooled;
-import skierread.SkierReadServiceOuterClass.SkierCountResponse;
-import skierread.SkierReadServiceOuterClass.VerticalIntResponse;
-import skierread.SkierReadServiceOuterClass.VerticalListResponse;
-import skierread.SkierReadServiceOuterClass.VerticalRecord;
-import utils.ConfigUtils;
 
 public class CacheReadService {
 
@@ -29,7 +27,7 @@ public class CacheReadService {
       return null;
     }
     long count = Long.parseLong(jedis.get(key));
-    return SkierCountResponse.newBuilder().setSkierCount((int) count).build();
+    return LiftRideReadProto.SkierCountResponse.newBuilder().setSkierCount((int) count).build();
   }
 
   /**

@@ -7,13 +7,28 @@ public class Configuration {
     public String RABBITMQ_HOST = "localhost"; // RabbitMQ broker IP
     public String RABBITMQ_USERNAME = "admin"; // username
     public String RABBITMQ_PASSWORD = "admin"; // password
-    public String EXCHANGE_NAME = "skiers_exchange"; // Exchange name for the messages
-    public String ROUTING_KEY = "skiers.route"; // Routing key for the messages
-    public String QUEUE_NAME = "skiers_queue"; // Queue name for the messages
+    public String RABBITMQ_EXCHANGE_NAME = "skiers_exchange"; // Exchange name for the messages
+    public String RABBITMQ_ROUTING_KEY = "skiers.route"; // Routing key for the messages
+    public String RABBITMQ_QUEUE_NAME_PREFIX = "skiers_queue"; // Queue name for the messages
+    public int RABBITMQ_MAX_QUEUED_MSG = 1000;
+    public int RABBITMQ_CIRCUIT_BREAKER_THRESHOLD = 10000;
+    public int RABBITMQ_CIRCUIT_BREAKER_TIMEOUT_MS = 2000;
+    public int RABBITMQ_QUEUE_MONITOR_THREAD_COUNT = 10;
+    public int RABBITMQ_QUEUE_MONITOR_INTERVAL_MS = 100;
+    public int RABBITMQ_NUM_QUEUES = 2; // Number of queues
+    public int RABBITMQ_NUM_CONNECTIONS = 2; // Number of connections
+    public int RABBITMQ_NUM_CHANNELS_PER_CONNECTION = 50; // Channels per connection
+    public int RABBITMQ_NUM_CHANNELS_PER_QUEUE = 5; // Number of channels created for each queue
+    public int RABBITMQ_CHANNEL_POOL_SIZE = 50; // Channel pool size
+    public int RABBITMQ_REQUEST_HEART_BEAT = 30; // Request heart beat in seconds
+    public int RABBITMQ_PREFETCH_COUNT = 10; // Prefect message count
+    public int RABBITMQ_BATCH_SIZE = 20;  // Number of messages per batch
+    public int RABBITMQ_FLUSH_INTERVAL_MS = 500;  // Flush acknowledgments every 500ms
 
     public String MYSQL_URL = "jdbc:mysql://localhost:3306/UPIC";
     public String MYSQL_USERNAME = "admin";
-    public String MYSQL_PASSWORD = "admin";
+    public String MYSQL_PASSWORD = "adminadmin";
+    public String MYSQL_TABLE_SCHEMA = "UPIC";
     public String MYSQL_INSERT_SQL = "INSERT INTO LiftRides (skier_id, resort_id, season_id, day_id, lift_id, ride_time) VALUES (?, ?, ?, ?, ?, ?)";
     public String MYSQL_GET_UNIQUE_SKIERS_SQL = "SELECT COUNT(DISTINCT skier_id) AS unique_skiers FROM LiftRides WHERE resort_id = ? AND season_id = ? AND day_id = ?";
     public String MYSQL_GET_DAILY_VERTICAL_SQL = "SELECT SUM(10 * lift_id) AS total_vertical FROM LiftRides WHERE skier_id = ? AND resort_id = ? AND season_id = ? AND day_id = ?";
@@ -23,44 +38,67 @@ public class Configuration {
     public int MYSQL_BATCH_SIZE = 100;
     public int MYSQL_FLUSH_INTERVAL_MS = 500;
 
-    public int EVENT_QUEUE_SIZE = 5000;
-    public int WORKER_POOL_SIZE = 20;
+    public String REDIS_HOST = "localhost";
+    public int REDIS_PORT = 6379;
+    public String REDIS_URL = "redis://localhost:6379";
+    public String REDIS_KEY_PATTERN_UNIQUE_SKIERS = "resort:{resortID}:season:{seasonID}:day:{dayID}:unique_skiers";
+    public String REDIS_KEY_PATTERN_DAILY_VERTICAL = "resort:{resortID}:season:{seasonID}:day:{dayID}:skier:{skierID}:vertical";
+    public String REDIS_KEY_PATTERN_ALL_SEASON_VERTICALS = "skier:{skierID}:resort:{resortID}:all_verticals";
+    public String REDIS_KEY_PATTERN_SINGLE_SEASON_VERTICAL = "skier:{skierId}:resort:{resortId}:season:{seasonId}:vertical";
 
-    public int MAX_QUEUED_MSG = 1000;
-    public int CIRCUIT_BREAKER_THRESHOLD = 10000;
-    public int CIRCUIT_BREAKER_TIMEOUT_MS = 2000;
-    public int QUEUE_MONITOR_THREAD_COUNT = 10;
-    public int QUEUE_MONITOR_INTERVAL_MS = 100;
-    public int MAX_BACKOFF_MS = 2000;
+    public boolean REDIS_BLOOM_FILTER_SWITCH = false;
+    public int REDIS_BLOOM_FILTER_CAPACITY = 1000000;
+    public double REDIS_BLOOM_FILTER_ERROR_RATE = 0.01;
+    public String REDIS_BLOOM_FILTER_UNIQUE_SKIERS = "bloom:unique_skiers";
+    public String REDIS_BLOOM_FILTER_DAILY_VERTICAL = "bloom:daily_vertical";
+    public String REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS = "bloom:all_vertical";
+    public String REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL = "bloom:season_vertical";
 
-    public int MAX_TOKENS = 100;
-    public int REFILL_RATE_PER_SECOND = 1600;
+    public String LIFTRIDE_READ_SERVICE_HOST = "localhost";
+    public int LIFTRIDE_READ_SERVICE_PORT = 8081;
+    public int LIFTRIDE_READ_SERVICE_MIN_THREAD = 16;
+    public int LIFTRIDE_READ_SERVICE_MAX_THREAD = 128;
+    public int LIFTRIDE_READ_SERVICE_QUEUE_SIZE = 10000;
 
-    public int NUM_QUEUES = 2; // Number of queues
-    public int NUM_CONNECTIONS = 2; // Number of connections
-    public int NUM_CHANNELS_PER_CONNECTION = 50; // Channels per connection
+    public String AGGREGATION_FULL_ROW_COUNT_SQL = "SELECT TABLE_ROWS FROM information_schema.tables WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'LiftRides'";
+    public String AGGREGATION_FULL_UNIQUE_SKIERS_SQL = "SELECT resort_id, season_id, day_id, COUNT(DISTINCT skier_id) as count FROM LiftRides GROUP BY resort_id, season_id, day_id";
+    public String AGGREGATION_FULL_DAILY_VERTICAL_SQL = "SELECT resort_id, season_id, day_id, skier_id, SUM(10 * lift_id) as total_vertical FROM LiftRides GROUP BY resort_id, season_id, day_id, skier_id";
+    public String AGGREGATION_FULL_SEASON_VERTICAL_SQL = "SELECT skier_id, resort_id, season_id, SUM(10 * lift_id) as total_vertical FROM LiftRides GROUP BY skier_id, resort_id, season_id";
+    public String AGGREGATION_BLOOM_FILTER_KEY_UNIQUE_SKIERS_SQL = "SELECT resort_id, season_id, day_id FROM LiftRides GROUP BY resort_id, season_id, day_id";
+    public String AGGREGATION_BLOOM_FILTER_KEY_DAILY_VERTICAL_SQL = "SELECT resort_id, season_id, day_id, skier_id FROM LiftRides GROUP BY resort_id, season_id, day_id, skier_id";
+    public String AGGREGATION_BLOOM_FILTER_KEY_SINGLE_SEASON_VERTICAL_SQL = "SELECT skier_id, resort_id, season_id FROM LiftRides GROUP BY skier_id, resort_id, season_id";
+    public String AGGREGATION_BLOOM_FILTER_KEY_ALL_SEASON_VERTICAL_SQL = "SELECT skier_id, resort_id FROM LiftRides GROUP BY skier_id, resort_id";
+    public String AGGREGATION_HOT_KEY_UNIQUE_SKIERS = "resort:*:season:*:day:*:unique_skiers";
+    public String AGGREGATION_HOT_KEY_DAILY_VERTICAL = "resort:*:season:*:day:*:skier:*:vertical";
+    public String AGGREGATION_HOT_KEY_SINGLE_SEASON_VERTICAL = "skier:*:resort:*:season:*:vertical";
+    public String AGGREGATION_HOT_KEY_ALL_SEASON_VERTICAL = "skier:*:resort:*:all_verticals";
+    public long AGGREGATION_FULL_MAX_ROWS = 1000000L;
+    public int AGGREGATION_FULL_INTERVAL_SEC = 60;
+    public int AGGREGATION_BLOOM_ONLY_INTERVAL_SEC = 10;
+    public int AGGREGATION_REFRESH_CACHE_INTERVAL_SEC = 5;
 
-    // Channel pool configuration
-    public int THREAD_POOL_SIZE = 500; // Thread pool size
-    public int MAX_CHANNELS = 500; // Maximum number of channels
-    public int CHANNEL_POOL_SIZE = 50; // Channel pool size
-    public int MIN_CONSUMERS = 100;   // Minimum number of consumers
-    public int MAX_CONSUMERS = 1000;  // Maximum number of consumers
+    public boolean RATE_LIMITER_READ_SWITCH = false;
+    public boolean RATE_LIMITER_WRITE_SWITCH = true;
+    public String RATE_LIMIT_READ_MODE = "LOCAL";
+    public String RATE_LIMIT_WRITE_MODE = "LOCAL"; // e.g. "LOCAL", "REMOTE", or "REDIS"
+    public String RATE_LIMITER_READ_SERVLET_GROUP_ID = "r";
+    public String RATE_LIMITER_WRITE_SERVLET_GROUP_ID = "w";
+    public String RATE_LIMITER_SERVICE_HOST = "localhost";
+    public int RATE_LIMITER_SERVICE_PORT = 9090;
+    public int RATE_LIMITER_SERVICE_MIN_THREAD = 16;
+    public int RATE_LIMITER_SERVICE_MAX_THREAD = 128;
+    public int RATE_LIMITER_SERVICE_QUEUE_SIZE = 10000;
+    public int RATE_LIMITER_MAX_BACKOFF_MS = 2000;
+    public int RATE_LIMITER_READ_MAX_TOKENS = 5000;
+    public int RATE_LIMITER_READ_REFILL_RATE = 5000;
+    public int RATE_LIMITER_WRITE_MAX_TOKENS = 5000;
+    public int RATE_LIMITER_WRITE_REFILL_RATE = 5000;
+
     public int MAX_RETRIES = 5; // Maximum number of retries
-    public int INITIAL_RETRY_DELAY_MS = 200; // Initial delay before retrying
-    public int REQUEST_HEART_BEAT = 30; // Request heart beat in seconds
-    public int PREFETCH_COUNT = 10; // Prefect message count
-    public int RABBITMQ_BATCH_SIZE = 20;  // Number of messages per batch
-    public int RABBITMQ_FLUSH_INTERVAL_MS = 500;  // Flush acknowledgments every 500ms
-    public int NUM_CHANNELS_PER_QUEUE = 5; // Number of channels created for each queue
-
-    public String REDIS_HOST;
-    public int REDIS_PORT;
 
     public String REDIS_KEY_UNIQUE_SKIER_COUNT;
     public String REDIS_KEY_VERTICAL_WITH_SKIER;
     public String REDIS_KEY_VERTICAL_COUNT;
-
 
     public Configuration() {}
 
@@ -69,20 +107,41 @@ public class Configuration {
         if (local.equals("true")) {
             RABBITMQ_HOST = "localhost";
             REDIS_HOST = "localhost";
+            LIFTRIDE_READ_SERVICE_HOST = "localhost";
+            RATE_LIMITER_SERVICE_HOST = "localhost";
         } else {
             RABBITMQ_HOST = properties.getProperty("RABBITMQ_HOST");
             REDIS_HOST = properties.getProperty("REDIS_HOST");
+            LIFTRIDE_READ_SERVICE_HOST = properties.getProperty("LIFTRIDE_READ_SERVICE_HOST");
+            RATE_LIMITER_SERVICE_HOST = properties.getProperty("RATE_LIMITER_SERVICE_HOST");
         }
+
         RABBITMQ_USERNAME = properties.getProperty("RABBITMQ_USERNAME");
         RABBITMQ_PASSWORD = properties.getProperty("RABBITMQ_PASSWORD");
-        EXCHANGE_NAME = properties.getProperty("EXCHANGE_NAME");
-        ROUTING_KEY = properties.getProperty("ROUTING_KEY");
-        QUEUE_NAME = properties.getProperty("QUEUE_NAME");
+        RABBITMQ_EXCHANGE_NAME = properties.getProperty("RABBITMQ_EXCHANGE_NAME");
+        RABBITMQ_ROUTING_KEY = properties.getProperty("RABBITMQ_ROUTING_KEY");
+        RABBITMQ_QUEUE_NAME_PREFIX = properties.getProperty("RABBITMQ_QUEUE_NAME_PREFIX");
+        RABBITMQ_MAX_QUEUED_MSG = Integer.parseInt(properties.getProperty("RABBITMQ_MAX_QUEUED_MSG"));
+        RABBITMQ_CIRCUIT_BREAKER_THRESHOLD = Integer.parseInt(properties.getProperty("RABBITMQ_CIRCUIT_BREAKER_THRESHOLD"));
+        RABBITMQ_CIRCUIT_BREAKER_TIMEOUT_MS = Integer.parseInt(properties.getProperty("RABBITMQ_CIRCUIT_BREAKER_TIMEOUT_MS"));
+        RABBITMQ_QUEUE_MONITOR_THREAD_COUNT = Integer.parseInt(properties.getProperty("RABBITMQ_QUEUE_MONITOR_THREAD_COUNT"));
+        RABBITMQ_QUEUE_MONITOR_INTERVAL_MS = Integer.parseInt(properties.getProperty("RABBITMQ_QUEUE_MONITOR_INTERVAL_MS"));
+        RABBITMQ_NUM_QUEUES = Integer.parseInt(properties.getProperty("RABBITMQ_NUM_QUEUES"));
+        RABBITMQ_NUM_CONNECTIONS = Integer.parseInt(properties.getProperty("RABBITMQ_NUM_CONNECTIONS"));
+        RABBITMQ_NUM_CHANNELS_PER_CONNECTION = Integer.parseInt(properties.getProperty("RABBITMQ_NUM_CHANNELS_PER_CONNECTION"));
+        RABBITMQ_CHANNEL_POOL_SIZE = Integer.parseInt(properties.getProperty("RABBITMQ_CHANNEL_POOL_SIZE"));
+        RABBITMQ_REQUEST_HEART_BEAT = Integer.parseInt(properties.getProperty("RABBITMQ_REQUEST_HEART_BEAT"));
+        RABBITMQ_PREFETCH_COUNT = Integer.parseInt(properties.getProperty("RABBITMQ_PREFETCH_COUNT"));
+        RABBITMQ_BATCH_SIZE = Integer.parseInt(properties.getProperty("RABBITMQ_BATCH_SIZE"));
+        RABBITMQ_FLUSH_INTERVAL_MS = Integer.parseInt(properties.getProperty("RABBITMQ_FLUSH_INTERVAL_MS"));
+        RABBITMQ_NUM_CHANNELS_PER_QUEUE = Integer.parseInt(properties.getProperty("RABBITMQ_NUM_CHANNELS_PER_QUEUE"));
 
         MYSQL_URL = properties.getProperty("MYSQL_URL");
         MYSQL_USERNAME = properties.getProperty("MYSQL_USERNAME");
         MYSQL_PASSWORD = properties.getProperty("MYSQL_PASSWORD");
+        MYSQL_TABLE_SCHEMA = properties.getProperty("MYSQL_TABLE_SCHEMA");
         MYSQL_INSERT_SQL = properties.getProperty("MYSQL_INSERT_SQL");
+
         MYSQL_GET_UNIQUE_SKIERS_SQL = properties.getProperty("MYSQL_GET_UNIQUE_SKIERS_SQL");
         MYSQL_GET_DAILY_VERTICAL_SQL = properties.getProperty("MYSQL_GET_DAILY_VERTICAL_SQL");
         MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_1 = properties.getProperty("MYSQL_GET_TOTAL_VERTICAL_SQL_CASE_1");
@@ -92,47 +151,68 @@ public class Configuration {
         MYSQL_BATCH_SIZE = Integer.parseInt(properties.getProperty("MYSQL_BATCH_SIZE"));
         MYSQL_FLUSH_INTERVAL_MS = Integer.parseInt(properties.getProperty("MYSQL_FLUSH_INTERVAL_MS"));
 
-        EVENT_QUEUE_SIZE = Integer.parseInt(properties.getProperty("EVENT_QUEUE_SIZE"));
-        WORKER_POOL_SIZE = Integer.parseInt(properties.getProperty("WORKER_POOL_SIZE"));
-
-        MAX_QUEUED_MSG = Integer.parseInt(properties.getProperty("MAX_QUEUED_MSG"));
-        CIRCUIT_BREAKER_THRESHOLD = Integer.parseInt(properties.getProperty("CIRCUIT_BREAKER_THRESHOLD"));
-        CIRCUIT_BREAKER_TIMEOUT_MS = Integer.parseInt(properties.getProperty("CIRCUIT_BREAKER_TIMEOUT_MS"));
-        QUEUE_MONITOR_THREAD_COUNT = Integer.parseInt(properties.getProperty("QUEUE_MONITOR_THREAD_COUNT"));
-        QUEUE_MONITOR_INTERVAL_MS = Integer.parseInt(properties.getProperty("QUEUE_MONITOR_INTERVAL_MS"));
-        MAX_BACKOFF_MS = Integer.parseInt(properties.getProperty("MAX_BACKOFF_MS"));
-
-        MAX_TOKENS = Integer.parseInt(properties.getProperty("MAX_TOKENS"));
-        REFILL_RATE_PER_SECOND = Integer.parseInt(properties.getProperty("REFILL_RATE_PER_SECOND"));
-
-        NUM_QUEUES = Integer.parseInt(properties.getProperty("NUM_QUEUES"));
-        NUM_CONNECTIONS = Integer.parseInt(properties.getProperty("NUM_CONNECTIONS"));
-        NUM_CHANNELS_PER_CONNECTION = Integer.parseInt(properties.getProperty("NUM_CHANNELS_PER_CONNECTION"));
-
-        THREAD_POOL_SIZE = Integer.parseInt(properties.getProperty("THREAD_POOL_SIZE"));
-        MAX_CHANNELS = Integer.parseInt(properties.getProperty("MAX_CHANNELS"));
-        CHANNEL_POOL_SIZE = Integer.parseInt(properties.getProperty("CHANNEL_POOL_SIZE"));
-        MIN_CONSUMERS = Integer.parseInt(properties.getProperty("MIN_CONSUMERS"));
-        MAX_CONSUMERS = Integer.parseInt(properties.getProperty("MAX_CONSUMERS"));
-        MAX_RETRIES = Integer.parseInt(properties.getProperty("MAX_RETRIES"));
-        INITIAL_RETRY_DELAY_MS = Integer.parseInt(properties.getProperty("INITIAL_RETRY_DELAY_MS"));
-        REQUEST_HEART_BEAT = Integer.parseInt(properties.getProperty("REQUEST_HEART_BEAT"));
-        PREFETCH_COUNT = Integer.parseInt(properties.getProperty("PREFETCH_COUNT"));
-        RABBITMQ_BATCH_SIZE = Integer.parseInt(properties.getProperty("RABBITMQ_BATCH_SIZE"));
-        RABBITMQ_FLUSH_INTERVAL_MS = Integer.parseInt(properties.getProperty("RABBITMQ_FLUSH_INTERVAL_MS"));
-        NUM_CHANNELS_PER_QUEUE = Integer.parseInt(properties.getProperty("NUM_CHANNELS_PER_QUEUE"));
-
         REDIS_PORT = Integer.parseInt(properties.getProperty("REDIS_PORT"));
+        REDIS_URL = properties.getProperty("REDIS_URL");
+        REDIS_KEY_PATTERN_UNIQUE_SKIERS = properties.getProperty("REDIS_KEY_PATTERN_UNIQUE_SKIERS");
+        REDIS_KEY_PATTERN_DAILY_VERTICAL = properties.getProperty("REDIS_KEY_PATTERN_DAILY_VERTICAL");
+        REDIS_KEY_PATTERN_ALL_SEASON_VERTICALS = properties.getProperty("REDIS_KEY_PATTERN_ALL_SEASON_VERTICALS");
+        REDIS_KEY_PATTERN_SINGLE_SEASON_VERTICAL = properties.getProperty("REDIS_KEY_PATTERN_SINGLE_SEASON_VERTICAL");
+
+        REDIS_BLOOM_FILTER_UNIQUE_SKIERS = properties.getProperty("REDIS_BLOOM_FILTER_UNIQUE_SKIERS");
+        REDIS_BLOOM_FILTER_DAILY_VERTICAL = properties.getProperty("REDIS_BLOOM_FILTER_DAILY_VERTICAL");
+        REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS = properties.getProperty("REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS");
+        REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL = properties.getProperty("REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL");
+
+        REDIS_BLOOM_FILTER_SWITCH = Boolean.parseBoolean(properties.getProperty("REDIS_BLOOM_FILTER_SWITCH"));
+        REDIS_BLOOM_FILTER_CAPACITY = Integer.parseInt(properties.getProperty("REDIS_BLOOM_FILTER_CAPACITY"));
+        REDIS_BLOOM_FILTER_ERROR_RATE = Double.parseDouble(properties.getProperty("REDIS_BLOOM_FILTER_ERROR_RATE"));
+
+        LIFTRIDE_READ_SERVICE_PORT = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_PORT"));
+        LIFTRIDE_READ_SERVICE_MIN_THREAD = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_MIN_THREAD"));
+        LIFTRIDE_READ_SERVICE_MAX_THREAD = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_MAX_THREAD"));
+        LIFTRIDE_READ_SERVICE_QUEUE_SIZE = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_QUEUE_SIZE"));
+
+        AGGREGATION_FULL_ROW_COUNT_SQL = properties.getProperty("AGGREGATION_FULL_ROW_COUNT_SQL");
+        AGGREGATION_FULL_UNIQUE_SKIERS_SQL = properties.getProperty("AGGREGATION_FULL_UNIQUE_SKIERS_SQL");
+        AGGREGATION_FULL_DAILY_VERTICAL_SQL = properties.getProperty("AGGREGATION_FULL_DAILY_VERTICAL_SQL");
+        AGGREGATION_FULL_SEASON_VERTICAL_SQL = properties.getProperty("AGGREGATION_FULL_SEASON_VERTICAL_SQL");
+        AGGREGATION_BLOOM_FILTER_KEY_UNIQUE_SKIERS_SQL = properties.getProperty("AGGREGATION_BLOOM_FILTER_KEY_UNIQUE_SKIERS_SQL");
+        AGGREGATION_BLOOM_FILTER_KEY_DAILY_VERTICAL_SQL = properties.getProperty("AGGREGATION_BLOOM_FILTER_KEY_DAILY_VERTICAL_SQL");
+        AGGREGATION_BLOOM_FILTER_KEY_SINGLE_SEASON_VERTICAL_SQL = properties.getProperty("AGGREGATION_BLOOM_FILTER_KEY_SINGLE_SEASON_VERTICAL_SQL");
+        AGGREGATION_BLOOM_FILTER_KEY_ALL_SEASON_VERTICAL_SQL = properties.getProperty("AGGREGATION_BLOOM_FILTER_KEY_ALL_SEASON_VERTICAL_SQL");
+        AGGREGATION_HOT_KEY_UNIQUE_SKIERS = properties.getProperty("AGGREGATION_HOT_KEY_UNIQUE_SKIERS");
+        AGGREGATION_HOT_KEY_DAILY_VERTICAL = properties.getProperty("AGGREGATION_HOT_KEY_DAILY_VERTICAL");
+        AGGREGATION_HOT_KEY_SINGLE_SEASON_VERTICAL = properties.getProperty("AGGREGATION_HOT_KEY_SINGLE_SEASON_VERTICAL");
+        AGGREGATION_HOT_KEY_ALL_SEASON_VERTICAL = properties.getProperty("AGGREGATION_HOT_KEY_ALL_SEASON_VERTICAL");
+
+        AGGREGATION_FULL_MAX_ROWS = Long.parseLong(properties.getProperty("AGGREGATION_FULL_MAX_ROWS"));
+        AGGREGATION_FULL_INTERVAL_SEC = Integer.parseInt(properties.getProperty("AGGREGATION_FULL_INTERVAL_SEC"));
+        AGGREGATION_BLOOM_ONLY_INTERVAL_SEC = Integer.parseInt(properties.getProperty("AGGREGATION_BLOOM_ONLY_INTERVAL_SEC"));
+        AGGREGATION_REFRESH_CACHE_INTERVAL_SEC = Integer.parseInt(properties.getProperty("AGGREGATION_REFRESH_CACHE_INTERVAL_SEC"));
+
+        RATE_LIMITER_MAX_BACKOFF_MS = Integer.parseInt(properties.getProperty("RATE_LIMITER_MAX_BACKOFF_MS"));
+        RATE_LIMITER_READ_SWITCH = Boolean.parseBoolean(properties.getProperty("RATE_LIMITER_READ_SWITCH"));
+        RATE_LIMITER_WRITE_SWITCH = Boolean.parseBoolean(properties.getProperty("RATE_LIMITER_WRITE_SWITCH"));
+        RATE_LIMIT_READ_MODE = properties.getProperty("RATE_LIMITER_READ_MODE");
+        RATE_LIMIT_WRITE_MODE = properties.getProperty("RATE_LIMITER_WRITE_MODE");
+        RATE_LIMITER_WRITE_SERVLET_GROUP_ID = properties.getProperty("RATE_LIMITER_WRITE_SERVLET_GROUP_ID");
+        RATE_LIMITER_READ_SERVLET_GROUP_ID = properties.getProperty("RATE_LIMITER_READ_SERVLET_GROUP_ID");
+        RATE_LIMITER_SERVICE_PORT = Integer.parseInt(properties.getProperty("RATE_LIMITER_SERVICE_PORT"));
+        RATE_LIMITER_SERVICE_MIN_THREAD = Integer.parseInt(properties.getProperty("RATE_LIMITER_SERVICE_MIN_THREAD"));
+        RATE_LIMITER_SERVICE_MAX_THREAD = Integer.parseInt(properties.getProperty("RATE_LIMITER_SERVICE_MAX_THREAD"));
+        RATE_LIMITER_SERVICE_QUEUE_SIZE = Integer.parseInt(properties.getProperty("RATE_LIMITER_SERVICE_QUEUE_SIZE"));
+        RATE_LIMITER_READ_MAX_TOKENS = Integer.parseInt(properties.getProperty("RATE_LIMITER_READ_MAX_TOKENS"));
+        RATE_LIMITER_READ_REFILL_RATE = Integer.parseInt(properties.getProperty("RATE_LIMITER_READ_REFILL_RATE"));
+        RATE_LIMITER_WRITE_MAX_TOKENS = Integer.parseInt(properties.getProperty("RATE_LIMITER_WRITE_MAX_TOKENS"));
+        RATE_LIMITER_WRITE_REFILL_RATE = Integer.parseInt(properties.getProperty("RATE_LIMITER_WRITE_REFILL_RATE"));
+
+
+
+        MAX_RETRIES = Integer.parseInt(properties.getProperty("MAX_RETRIES"));
+
+
         REDIS_KEY_UNIQUE_SKIER_COUNT = properties.getProperty("REDIS_KEY_UNIQUE_SKIER_COUNT");
         REDIS_KEY_VERTICAL_WITH_SKIER= properties.getProperty("REDIS_KEY_VERTICAL_WITH_SKIER");
         REDIS_KEY_VERTICAL_COUNT = properties.getProperty("REDIS_KEY_VERTICAL_COUNT");
-    }
-
-    public String getREDIS_HOST() {
-        return REDIS_HOST;
-    }
-
-    public int getREDIS_PORT() {
-        return REDIS_PORT;
     }
 }

@@ -18,8 +18,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class SkiersWriteService {
-    private static final Configuration config = ConfigUtils.getConfigurationForLiftRideService();
+public class LiftRideWriteService {
+    private static final Configuration config = ConfigUtils.getConfigurationForService();
     private static final Gson gson = new Gson();
     private static final List<Connection> mqConnections = new ArrayList<>();
     // Global list to hold all DBWriter instances
@@ -40,23 +40,23 @@ public class SkiersWriteService {
     private static void setupRabbitMQConnections() throws Exception {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setSharedExecutor(Executors.newFixedThreadPool(
-                config.NUM_CONNECTIONS * config.NUM_QUEUES * config.NUM_CHANNELS_PER_QUEUE));
+                config.RABBITMQ_NUM_CONNECTIONS * config.RABBITMQ_NUM_QUEUES * config.RABBITMQ_NUM_CHANNELS_PER_QUEUE)); // This determines the number of workers handling the consumption
         factory.setHost(config.RABBITMQ_HOST);
         factory.setUsername(config.RABBITMQ_USERNAME);
         factory.setPassword(config.RABBITMQ_PASSWORD);
         factory.setAutomaticRecoveryEnabled(true);
         factory.setRequestedHeartbeat(30);
 
-        for (int i = 0; i < config.NUM_CONNECTIONS; i++) {
+        for (int i = 0; i < config.RABBITMQ_NUM_CONNECTIONS; i++) {
             mqConnections.add(factory.newConnection());
         }
 
         for (Connection conn : mqConnections) {
             try (Channel setupChannel = conn.createChannel()) {
-                for (int q = 0; q < config.NUM_QUEUES; q++) {
-                    String queueName = config.EXCHANGE_NAME + "_queue_" + q;
+                for (int q = 0; q < config.RABBITMQ_NUM_QUEUES; q++) {
+                    String queueName = config.RABBITMQ_EXCHANGE_NAME + "_queue_" + q;
                     setupChannel.queueDeclare(queueName, true, false, false, null);
-                    for (int c = 0; c < config.NUM_CHANNELS_PER_QUEUE; c++) {
+                    for (int c = 0; c < config.RABBITMQ_NUM_CHANNELS_PER_QUEUE; c++) {
                         try {
                             consumeMessages(conn, queueName);
                         } catch (Exception e) {
@@ -84,7 +84,7 @@ public class SkiersWriteService {
     // Consumer function that continuously listens for messages
     private static void consumeMessages(Connection connection, String queueName) throws IOException, TimeoutException {
         Channel channel = connection.createChannel();
-        channel.basicQos(config.PREFETCH_COUNT);
+        channel.basicQos(config.RABBITMQ_PREFETCH_COUNT);
 
         LiftRideWriter dbWriter;
         try {

@@ -20,4 +20,24 @@ public class LiftRideEventMsg {
     public int getDayID() { return dayID; }
     public int getSkierID() { return skierID; }
     public LiftRide getLiftRide() { return liftRide; }
+
+    public void setResortID(int resortID) {
+        this.resortID = resortID;
+    }
+
+    public void setSeasonID(String seasonID) {
+        this.seasonID = seasonID;
+    }
+
+    public void setDayID(int dayID) {
+        this.dayID = dayID;
+    }
+
+    public void setSkierID(int skierID) {
+        this.skierID = skierID;
+    }
+
+    public void setLiftRide(LiftRide liftRide) {
+        this.liftRide = liftRide;
+    }
 }

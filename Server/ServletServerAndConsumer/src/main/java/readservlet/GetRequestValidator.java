@@ -74,7 +74,7 @@ public class GetRequestValidator {
                 stringDays.equals("days") &&
                 stringSkiers2.equals("skiers") &&
                 resortID >= 1 && resortID <= 10 &&
-                seasonID == 2025 &&
+                seasonID >= 1000 && seasonID <= 9999 &&
                 dayID >= 1 && dayID <= 3 &&
                 skierID >= 1 && skierID <= 100000;
     }
@@ -94,7 +94,7 @@ public class GetRequestValidator {
                 stringDays.equals("day") &&
                 stringSkiers.equals("skiers") &&
                 resortID >= 1 && resortID <= 10 &&
-                seasonID == 2025 &&
+                seasonID >= 1000 && seasonID <= 9999 &&
                 dayID >= 1 && dayID <= 3;
     }
 

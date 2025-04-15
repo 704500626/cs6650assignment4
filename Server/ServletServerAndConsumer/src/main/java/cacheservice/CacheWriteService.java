@@ -5,8 +5,8 @@ import model.Configuration;
 import model.SkierVertical;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPooled;
-import skierread.SkierReadServiceOuterClass.VerticalRecord;
-import utils.ConfigUtils;
+import grpc.*;
+import grpc.LiftRideReadProto.*;
 
 public class CacheWriteService {
 

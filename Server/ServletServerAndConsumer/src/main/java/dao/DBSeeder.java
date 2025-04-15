@@ -1,6 +1,8 @@
 package dao;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DBSeeder {
 //    private static final String URL = "jdbc:mysql://localhost:3306/UPIC";
@@ -70,11 +72,17 @@ public class DBSeeder {
 
     private static void insertSeasons(Connection conn) throws SQLException {
         String sql = "INSERT INTO Seasons (resort_id, season_id) VALUES (?, ?)";
+        List<String> seasons = new ArrayList<>();
+        for (int i = 1000; i <= 9999; i++) {
+            seasons.add(Integer.toString(i));
+        }
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             for (int resortId = 1; resortId <= 10; resortId++) {
-                stmt.setInt(1, resortId);
-                stmt.setString(2, "2025");
-                stmt.addBatch();
+                for (String season : seasons) {
+                    stmt.setInt(1, resortId);
+                    stmt.setString(2, season);
+                    stmt.addBatch();
+                }
             }
             stmt.executeBatch();
             System.out.println("Inserted Seasons.");

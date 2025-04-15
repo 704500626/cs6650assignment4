@@ -22,4 +22,8 @@
         <servlet-name>SkierReadServlet</servlet-name>
         <url-pattern>/skiers/read/*</url-pattern>
     </servlet-mapping>
+
+    <listener>
+        <listener-class>context.ContextListener</listener-class> <!-- this is only for read servlet -->
+    </listener>
 </web-app>

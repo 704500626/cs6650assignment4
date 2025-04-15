@@ -32,25 +32,25 @@ public class RabbitMQPublisher {
 
     public RabbitMQPublisher(Configuration config) throws Exception {
         this.config = config;
-        for (int i = 0; i < config.NUM_QUEUES; i++) {
-            queueNames.add(config.EXCHANGE_NAME + "_queue_" + i);
+        for (int i = 0; i < config.RABBITMQ_NUM_QUEUES; i++) {
+            queueNames.add(config.RABBITMQ_EXCHANGE_NAME + "_queue_" + i);
         }
-        monitorPool = Executors.newFixedThreadPool(config.QUEUE_MONITOR_THREAD_COUNT);
+        monitorPool = Executors.newFixedThreadPool(config.RABBITMQ_QUEUE_MONITOR_THREAD_COUNT);
         try {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(config.RABBITMQ_HOST);
             factory.setUsername(config.RABBITMQ_USERNAME);
             factory.setPassword(config.RABBITMQ_PASSWORD);
             factory.setAutomaticRecoveryEnabled(true);
-            factory.setRequestedHeartbeat(config.REQUEST_HEART_BEAT);
+            factory.setRequestedHeartbeat(config.RABBITMQ_REQUEST_HEART_BEAT);
             Connection connection = factory.newConnection();
-            channelPool = new RMQChannelPool(config.CHANNEL_POOL_SIZE, new RMQChannelFactory(connection));
+            channelPool = new RMQChannelPool(config.RABBITMQ_CHANNEL_POOL_SIZE, new RMQChannelFactory(connection));
             try (Channel setupChannel = connection.createChannel()) {
-                setupChannel.exchangeDeclare(config.EXCHANGE_NAME, "direct", true);
-                for (int q = 0; q < config.NUM_QUEUES; q++) {
+                setupChannel.exchangeDeclare(config.RABBITMQ_EXCHANGE_NAME, "direct", true);
+                for (int q = 0; q < config.RABBITMQ_NUM_QUEUES; q++) {
                     String queueName = queueNames.get(q);
                     setupChannel.queueDeclare(queueName, true, false, false, null);
-                    setupChannel.queueBind(queueName, config.EXCHANGE_NAME, queueName);
+                    setupChannel.queueBind(queueName, config.RABBITMQ_EXCHANGE_NAME, queueName);
                 }
             }
             startQueueMonitoring();
@@ -60,7 +60,7 @@ public class RabbitMQPublisher {
     }
 
     private void startQueueMonitoring() {
-        scheduler.scheduleAtFixedRate(this::monitorQueues, 0, config.QUEUE_MONITOR_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(this::monitorQueues, 0, config.RABBITMQ_QUEUE_MONITOR_INTERVAL_MS, TimeUnit.MILLISECONDS);
     }
 
     private void monitorQueues() {
@@ -73,16 +73,16 @@ public class RabbitMQPublisher {
             try {
                 totalDepth += future.get();
             } catch (Exception e) {
-                totalDepth += config.MAX_QUEUED_MSG;
+                totalDepth += config.RABBITMQ_MAX_QUEUED_MSG;
             }
         }
         currentQueueDepth = totalDepth;
         // Circuit breaker logic
-        if (currentQueueDepth > config.CIRCUIT_BREAKER_THRESHOLD && !circuitOpen) {
+        if (currentQueueDepth > config.RABBITMQ_CIRCUIT_BREAKER_THRESHOLD && !circuitOpen) {
             circuitOpen = true;
             circuitOpenedTime = System.currentTimeMillis();
             System.err.println("[WARN] Circuit opened: Queue depth (" + currentQueueDepth + ") exceeded threshold!");
-        } else if (circuitOpen && (System.currentTimeMillis() - circuitOpenedTime > config.CIRCUIT_BREAKER_TIMEOUT_MS)) {
+        } else if (circuitOpen && (System.currentTimeMillis() - circuitOpenedTime > config.RABBITMQ_CIRCUIT_BREAKER_TIMEOUT_MS)) {
             circuitOpen = false;
             System.out.println("[INFO] Circuit closed: Resuming normal operations.");
         }
@@ -90,7 +90,7 @@ public class RabbitMQPublisher {
 
     private int getQueueDepth(String queueName) {
         Channel channel = null;
-        int depth = config.MAX_QUEUED_MSG;
+        int depth = config.RABBITMQ_MAX_QUEUED_MSG;
         try {
             channel = channelPool.borrowObject();
             depth = channel.queueDeclarePassive(queueName).getMessageCount();
@@ -121,10 +121,9 @@ public class RabbitMQPublisher {
      */
     public boolean waitForAcceptableQueueDepth(int maxRetries, int maxBackoffMs) {
         int retries = 0;
-        while (currentQueueDepth > config.MAX_QUEUED_MSG && retries < maxRetries) {
+        while (currentQueueDepth > config.RABBITMQ_MAX_QUEUED_MSG && retries < maxRetries) {
             try {
                 int delayMs = Math.min(100 * (retries + 1), maxBackoffMs);
-                System.out.println("Queue depth high (" + currentQueueDepth + "), delaying by " + delayMs + "ms");
                 Thread.sleep(delayMs);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -140,11 +139,11 @@ public class RabbitMQPublisher {
      */
     public boolean publishLiftRideEvent(LiftRideEventMsg event) throws Exception {
         String messageJson = gson.toJson(event);
-        int queueIndex = requestCounter.getAndIncrement() % config.NUM_QUEUES;
+        int queueIndex = requestCounter.getAndIncrement() % config.RABBITMQ_NUM_QUEUES;
         Channel channel = null;
         try {
             channel = channelPool.borrowObject();
-            channel.basicPublish(config.EXCHANGE_NAME, queueNames.get(queueIndex), MessageProperties.PERSISTENT_TEXT_PLAIN, messageJson.getBytes());
+            channel.basicPublish(config.RABBITMQ_EXCHANGE_NAME, queueNames.get(queueIndex), MessageProperties.PERSISTENT_TEXT_PLAIN, messageJson.getBytes());
         } catch (Exception e) {
             return false;
         } finally {

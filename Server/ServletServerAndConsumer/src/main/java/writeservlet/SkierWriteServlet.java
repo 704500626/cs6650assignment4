@@ -5,8 +5,10 @@ import model.Configuration;
 import model.LiftRideEventMsg;
 import model.ResponseMsg;
 import ratelimiter.RateLimiter;
-import ratelimiter.TokenBucketRateLimiter;
+import ratelimiter.RateLimiterFactory;
+import ratelimiter.algorithms.TokenBucketRateLimiter;
 import utils.ConfigUtils;
+import utils.RequestValidator;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -24,7 +26,7 @@ public class SkierWriteServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         config = ConfigUtils.getConfigurationForServlet(getServletContext());
-        rateLimiter = new TokenBucketRateLimiter(config.MAX_TOKENS, config.REFILL_RATE_PER_SECOND);
+        rateLimiter = RateLimiterFactory.create(config.RATE_LIMIT_WRITE_MODE, config.RATE_LIMITER_SERVICE_HOST, config.RATE_LIMITER_READ_SERVLET_GROUP_ID, config.RATE_LIMITER_SERVICE_PORT, config.RATE_LIMITER_WRITE_MAX_TOKENS, config.RATE_LIMITER_WRITE_REFILL_RATE);
         try {
             publisher = new RabbitMQPublisher(config);
         } catch (Exception e) {
@@ -54,14 +56,14 @@ public class SkierWriteServlet extends HttpServlet {
         }
 
         // Apply rate limiting with retries
-        if (!rateLimiter.allowRequestWithRetries(config.MAX_RETRIES, config.MAX_BACKOFF_MS)) {
+        if (config.RATE_LIMITER_WRITE_SWITCH && !rateLimiter.allowRequestWithRetries(config.MAX_RETRIES, config.RATE_LIMITER_MAX_BACKOFF_MS)) {
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             out.write(gson.toJson(new ResponseMsg("Rate limit exceeded. Please try again later.")));
             return;
         }
 
         // Wait until the queue depth is acceptable
-        if (!publisher.waitForAcceptableQueueDepth(config.MAX_RETRIES, config.MAX_BACKOFF_MS)) {
+        if (!publisher.waitForAcceptableQueueDepth(config.MAX_RETRIES, config.RATE_LIMITER_MAX_BACKOFF_MS)) {
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             out.write(gson.toJson(new ResponseMsg("Queue overload, please try again later.")));
             return;

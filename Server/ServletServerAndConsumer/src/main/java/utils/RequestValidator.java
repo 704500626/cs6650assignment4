@@ -1,4 +1,4 @@
-package writeservlet;
+package utils;
 
 import com.google.gson.Gson;
 import model.LiftRide;
@@ -39,7 +39,7 @@ public class RequestValidator {
     public static boolean validateParameters(int resortID, String seasonID, int dayID, int skierID) {
         return skierID >= 1 && skierID <= 100000 &&
                 resortID >= 1 && resortID <= 10 &&
-                "2025".equals(seasonID) &&
-                dayID == 1;
+                seasonID != null && seasonID.length() == 4 &&
+                dayID >= 1 && dayID <= 3;
     }
 }
