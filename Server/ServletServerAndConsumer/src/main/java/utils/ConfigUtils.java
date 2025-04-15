@@ -20,6 +20,16 @@ public class ConfigUtils {
 
     public static Configuration getConfigurationForService() {
         try {
+            // 0. Try loading from external static path (EC2-specific)
+            if (Files.exists(Paths.get(EXTERNAL_CONFIG_PATH))) {
+                System.out.println("[Config] Loading servlet config from external path: " + EXTERNAL_CONFIG_PATH);
+                try (InputStream input = Files.newInputStream(Paths.get(EXTERNAL_CONFIG_PATH))) {
+                    Properties props = new Properties();
+                    props.load(input);
+                    return new Configuration(props);
+                }
+            }
+
             // 1. Try loading from current working directory
             if (Files.exists(Paths.get(FILE_NAME))) {
                 System.out.println("[Config] Loading config from current directory");
