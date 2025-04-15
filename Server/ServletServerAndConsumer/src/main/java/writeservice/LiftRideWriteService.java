@@ -40,14 +40,14 @@ public class LiftRideWriteService {
     private static void setupRabbitMQConnections() throws Exception {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setSharedExecutor(Executors.newFixedThreadPool(
-                config.RABBITMQ_NUM_CONNECTIONS * config.RABBITMQ_NUM_QUEUES * config.RABBITMQ_NUM_CHANNELS_PER_QUEUE)); // This determines the number of workers handling the consumption
+                config.RABBITMQ_CONSUMER_NUM_WORKER_THREAD)); // This determines the number of workers handling the consumption, previously config.RABBITMQ_NUM_CONNECTIONS * config.RABBITMQ_NUM_QUEUES * config.RABBITMQ_NUM_CHANNELS_PER_QUEUE
         factory.setHost(config.RABBITMQ_HOST);
         factory.setUsername(config.RABBITMQ_USERNAME);
         factory.setPassword(config.RABBITMQ_PASSWORD);
         factory.setAutomaticRecoveryEnabled(true);
         factory.setRequestedHeartbeat(30);
 
-        for (int i = 0; i < config.RABBITMQ_NUM_CONNECTIONS; i++) {
+        for (int i = 0; i < config.RABBITMQ_CONSUMER_NUM_CONNECTIONS; i++) {
             mqConnections.add(factory.newConnection());
         }
 
@@ -56,7 +56,7 @@ public class LiftRideWriteService {
                 for (int q = 0; q < config.RABBITMQ_NUM_QUEUES; q++) {
                     String queueName = config.RABBITMQ_EXCHANGE_NAME + "_queue_" + q;
                     setupChannel.queueDeclare(queueName, true, false, false, null);
-                    for (int c = 0; c < config.RABBITMQ_NUM_CHANNELS_PER_QUEUE; c++) {
+                    for (int c = 0; c < config.RABBITMQ_CONSUMER_NUM_CHANNELS_PER_QUEUE; c++) {
                         try {
                             consumeMessages(conn, queueName);
                         } catch (Exception e) {
@@ -78,13 +78,13 @@ public class LiftRideWriteService {
                     e.printStackTrace();
                 }
             }
-        }, config.MYSQL_FLUSH_INTERVAL_MS, config.MYSQL_FLUSH_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        }, config.MYSQL_WRITE_FLUSH_INTERVAL_MS, config.MYSQL_WRITE_FLUSH_INTERVAL_MS, TimeUnit.MILLISECONDS);
     }
 
     // Consumer function that continuously listens for messages
     private static void consumeMessages(Connection connection, String queueName) throws IOException, TimeoutException {
         Channel channel = connection.createChannel();
-        channel.basicQos(config.RABBITMQ_PREFETCH_COUNT);
+        channel.basicQos(config.RABBITMQ_CONSUMER_PREFETCH_COUNT);
 
         LiftRideWriter dbWriter;
         try {

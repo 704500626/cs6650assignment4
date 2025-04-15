@@ -19,7 +19,7 @@ public class FullAggregation implements AggregationStrategy {
     public FullAggregation(Configuration config, RedisCacheClient cache) throws SQLException {
         this.config = config;
         this.cache = cache;
-        this.conn = DriverManager.getConnection(config.MYSQL_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD);
+        this.conn = DriverManager.getConnection(config.MYSQL_READ_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD);
     }
 
     @Override

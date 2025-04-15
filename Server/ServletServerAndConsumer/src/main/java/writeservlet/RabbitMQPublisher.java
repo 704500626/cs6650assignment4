@@ -44,7 +44,7 @@ public class RabbitMQPublisher {
             factory.setAutomaticRecoveryEnabled(true);
             factory.setRequestedHeartbeat(config.RABBITMQ_REQUEST_HEART_BEAT);
             Connection connection = factory.newConnection();
-            channelPool = new RMQChannelPool(config.RABBITMQ_CHANNEL_POOL_SIZE, new RMQChannelFactory(connection));
+            channelPool = new RMQChannelPool(config.RABBITMQ_PRODUCER_CHANNEL_POOL_SIZE, new RMQChannelFactory(connection));
             try (Channel setupChannel = connection.createChannel()) {
                 setupChannel.exchangeDeclare(config.RABBITMQ_EXCHANGE_NAME, "direct", true);
                 for (int q = 0; q < config.RABBITMQ_NUM_QUEUES; q++) {

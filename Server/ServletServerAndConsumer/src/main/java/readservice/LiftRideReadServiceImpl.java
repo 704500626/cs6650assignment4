@@ -29,6 +29,13 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
         try {
             if (withSeason) {
                 String itemKey = cache.getSingleSeasonVerticalKey(skierId, resortId, seasonId);
+                if (config.REDIS_BLOOM_FILTER_SWITCH && !cache.exists(config.REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL, itemKey)) {
+                    System.out.printf("[getTotalVertical-season] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
+                    responseObserver.onNext(VerticalListResponse.newBuilder().build()); // empty list
+                    responseObserver.onCompleted();
+                    return;
+                }
+
                 Integer cached = cache.getSingleSeasonVertical(itemKey);
                 if (cached != null) {
                     System.out.printf("[getTotalVertical-season] Cache hit: key=%s, value=%d%n", itemKey, cached);
@@ -37,13 +44,6 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
                     return;
                 }
                 System.out.printf("[getTotalVertical-season] Cache miss: key=%s%n", itemKey);
-
-                if (config.REDIS_BLOOM_FILTER_SWITCH && !cache.exists(config.REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL, itemKey)) {
-                    System.out.printf("[getTotalVertical-season] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
-                    responseObserver.onNext(VerticalListResponse.newBuilder().build()); // empty list
-                    responseObserver.onCompleted();
-                    return;
-                }
 
                 List<VerticalRecord> results = dbReader.getSkierResortTotals(skierId, resortId, seasonId);
                 System.out.printf("[getTotalVertical-season] Fetched from DB: key=%s, results size=%d%n", itemKey, results.size());
@@ -56,6 +56,13 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
                 responseObserver.onCompleted();
             } else {
                 String itemKey = cache.getAllSeasonsVerticalKey(skierId, resortId);
+                if (config.REDIS_BLOOM_FILTER_SWITCH && !cache.exists(config.REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS, itemKey)) {
+                    System.out.printf("[getTotalVertical-all] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
+                    responseObserver.onNext(VerticalListResponse.newBuilder().build());
+                    responseObserver.onCompleted();
+                    return;
+                }
+
                 List<VerticalRecord> cached = cache.getAllSeasonVerticals(itemKey);
                 if (cached != null) {
                     System.out.printf("[getTotalVertical-all] Cache hit: key=%s, size=%d%n", itemKey, cached.size());
@@ -64,13 +71,6 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
                     return;
                 }
                 System.out.printf("[getTotalVertical-all] Cache miss: key=%s%n", itemKey);
-
-                if (config.REDIS_BLOOM_FILTER_SWITCH && !cache.exists(config.REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS, itemKey)) {
-                    System.out.printf("[getTotalVertical-all] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
-                    responseObserver.onNext(VerticalListResponse.newBuilder().build());
-                    responseObserver.onCompleted();
-                    return;
-                }
 
                 List<VerticalRecord> results = dbReader.getSkierResortTotals(skierId, resortId, "");
                 System.out.printf("[getTotalVertical-all] Fetched from DB: key=%s, results size=%d%n", itemKey, results.size());
@@ -92,6 +92,13 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
         String itemKey = cache.getSkierDayVerticalKey(resortId, seasonId, dayId, skierId);
 
         try {
+            if (config.REDIS_BLOOM_FILTER_SWITCH && !cache.exists(config.REDIS_BLOOM_FILTER_DAILY_VERTICAL, itemKey)) {
+                System.out.printf("[getDailyVertical] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
+                responseObserver.onNext(VerticalIntResponse.newBuilder().setTotalVertical(0).build());
+                responseObserver.onCompleted();
+                return;
+            }
+
             Integer cached = cache.getSkierDayVertical(itemKey);
             if (cached != null) {
                 System.out.printf("[getDailyVertical] Cache hit: key=%s, value=%d%n", itemKey, cached);
@@ -100,13 +107,6 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
                 return;
             }
             System.out.printf("[getDailyVertical] Cache miss: key=%s%n", itemKey);
-
-            if (config.REDIS_BLOOM_FILTER_SWITCH && !cache.exists(config.REDIS_BLOOM_FILTER_DAILY_VERTICAL, itemKey)) {
-                System.out.printf("[getDailyVertical] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
-                responseObserver.onNext(VerticalIntResponse.newBuilder().setTotalVertical(0).build());
-                responseObserver.onCompleted();
-                return;
-            }
 
             int vertical = dbReader.getSkierDayVertical(resortId, seasonId, dayId, skierId);
             System.out.printf("[getDailyVertical] Fetched from DB: key=%s, value=%d%n", itemKey, vertical);
@@ -126,6 +126,13 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
         String itemKey = cache.getUniqueSkierCountKey(resortId, seasonId, dayId);
 
         try {
+            if (config.REDIS_BLOOM_FILTER_SWITCH && !cache.exists(config.REDIS_BLOOM_FILTER_UNIQUE_SKIERS, itemKey)) {
+                System.out.printf("[getUniqueSkiers] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
+                responseObserver.onNext(SkierCountResponse.newBuilder().setSkierCount(0).build());
+                responseObserver.onCompleted();
+                return;
+            }
+
             Integer cached = cache.getUniqueSkierCount(itemKey);
             if (cached != null) {
                 System.out.printf("[getUniqueSkiers] Cache hit: key=%s, value=%d%n", itemKey, cached);
@@ -134,13 +141,6 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
                 return;
             }
             System.out.printf("[getUniqueSkiers] Cache miss: key=%s%n", itemKey);
-
-            if (config.REDIS_BLOOM_FILTER_SWITCH && !cache.exists(config.REDIS_BLOOM_FILTER_UNIQUE_SKIERS, itemKey)) {
-                System.out.printf("[getUniqueSkiers] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
-                responseObserver.onNext(SkierCountResponse.newBuilder().setSkierCount(0).build());
-                responseObserver.onCompleted();
-                return;
-            }
 
             int count = dbReader.getResortUniqueSkiers(resortId, seasonId, dayId);
             System.out.printf("[getUniqueSkiers] Fetched from DB: key=%s, value=%d%n", itemKey, count);

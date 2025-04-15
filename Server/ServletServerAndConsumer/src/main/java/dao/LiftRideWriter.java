@@ -20,7 +20,7 @@ public class LiftRideWriter {
     public LiftRideWriter(Configuration config, Channel channel) throws SQLException {
         this.config = config;
         this.channel = channel;
-        this.conn = DriverManager.getConnection(config.MYSQL_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD);
+        this.conn = DriverManager.getConnection(config.MYSQL_WRITE_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD);
         this.conn.setAutoCommit(false);
         this.stmt = conn.prepareStatement(config.MYSQL_INSERT_SQL);
     }
@@ -32,7 +32,7 @@ public class LiftRideWriter {
     public synchronized void addEvent(LiftRideEventMsg event, long deliveryTag) throws SQLException {
         buffer.add(event);
         deliveryTags.add(deliveryTag);
-        if (buffer.size() >= config.MYSQL_BATCH_SIZE) {
+        if (buffer.size() >= config.MYSQL_WRITE_BATCH_SIZE) {
             flush();
         }
     }

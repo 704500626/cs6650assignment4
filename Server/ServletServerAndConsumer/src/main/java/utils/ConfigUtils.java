@@ -8,67 +8,67 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 public class ConfigUtils {
     private static final String FILE_NAME = "config.properties";
 
+    // Static path for servlet deployments (e.g., on EC2)
+    public static String EXTERNAL_CONFIG_PATH = "/home/ec2-user/config.properties";
+
     public static Configuration getConfigurationForService() {
-        // First, try to load config.properties from the current working directory
-        File localFile = new File(FILE_NAME);
-        if (localFile.exists()) {
-            try (InputStream input = new FileInputStream(localFile)) {
-                Properties properties = new Properties();
-                properties.load(input);
-                System.out.println("[ConfigUtils] Loaded config.properties from working directory.");
-                return new Configuration(properties);
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            // 1. Try loading from current working directory
+            if (Files.exists(Paths.get(FILE_NAME))) {
+                System.out.println("[Config] Loading config from current directory");
+                try (InputStream input = Files.newInputStream(Paths.get(FILE_NAME))) {
+                    Properties props = new Properties();
+                    props.load(input);
+                    return new Configuration(props);
+                }
             }
-        }
 
-        // Then read from classpath
-        try (InputStream input = ConfigUtils.class.getClassLoader().getResourceAsStream(FILE_NAME)) {
-            if (input == null) {
-                System.out.println("[ConfigUtils] config.properties not found in classpath.");
-                return new Configuration();
+            // 2. Fallback to classpath
+            System.out.println("[Config] Loading config from classpath");
+            try (InputStream input = ConfigUtils.class.getClassLoader().getResourceAsStream(FILE_NAME)) {
+                if (input != null) {
+                    Properties props = new Properties();
+                    props.load(input);
+                    return new Configuration(props);
+                }
             }
-            Properties properties = new Properties();
-            properties.load(input);
-            System.out.println("[ConfigUtils] Loaded config.properties from classpath.");
-            return new Configuration(properties);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-        return new Configuration();
-    }
-
-    public static Configuration getConfigurationForServlet(ServletContext context) throws ServletException {
-        // First, try to load from the working directory
-        File localFile = new File(FILE_NAME);
-        if (localFile.exists()) {
-            try (InputStream input = new FileInputStream(localFile)) {
-                Properties configProperties = new Properties();
-                configProperties.load(input);
-                System.out.println("[ConfigUtils] Loaded config.properties from working directory.");
-                return new Configuration(configProperties);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Load properties file from /WEB-INF/classes/
-        try (InputStream input = context.getResourceAsStream("/WEB-INF/classes/" + FILE_NAME)) {
-            if (input == null) {
-                System.out.println("Sorry, unable to find config.properties");
-                return new Configuration();
-            }
-            Properties configProperties = new Properties();
-            configProperties.load(input);
-            return new Configuration(configProperties);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return new Configuration();
+        return new Configuration(); // fallback to default
+    }
+
+    public static Configuration getConfigurationForServlet(ServletContext context) throws ServletException {
+        try {
+            // 1. Try loading from external static path (EC2-specific)
+            if (Files.exists(Paths.get(EXTERNAL_CONFIG_PATH))) {
+                System.out.println("[Config] Loading servlet config from external path: " + EXTERNAL_CONFIG_PATH);
+                try (InputStream input = Files.newInputStream(Paths.get(EXTERNAL_CONFIG_PATH))) {
+                    Properties props = new Properties();
+                    props.load(input);
+                    return new Configuration(props);
+                }
+            }
+
+            // 2. Fallback to WEB-INF/classes/
+            System.out.println("[Config] Loading servlet config from WEB-INF/classes");
+            try (InputStream input = context.getResourceAsStream("/WEB-INF/classes/" + FILE_NAME)) {
+                if (input != null) {
+                    Properties props = new Properties();
+                    props.load(input);
+                    return new Configuration(props);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new Configuration(); // fallback to default
     }
 }

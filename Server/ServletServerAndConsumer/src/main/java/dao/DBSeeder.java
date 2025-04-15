@@ -12,10 +12,14 @@ public class DBSeeder {
 
     public static void main(String[] args) {
         String url = URL;
-        if (args.length == 1) {
+        String user = USER;
+        String password = PASSWORD;
+        if (args.length != 0) {
             url = args[0];
+            user = args[1];
+            password = args[2];
         }
-        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD)) {
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
             conn.setAutoCommit(false);
             insertResorts(conn);
             insertSkiers(conn);

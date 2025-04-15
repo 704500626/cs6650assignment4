@@ -19,10 +19,10 @@ public class LiftRideReader {
     public LiftRideReader(Configuration config) {
         this.config = config;
         HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl(config.MYSQL_URL);
+        hikariConfig.setJdbcUrl(config.MYSQL_READ_URL);
         hikariConfig.setUsername(config.MYSQL_USERNAME);
         hikariConfig.setPassword(config.MYSQL_PASSWORD);
-        hikariConfig.setMaximumPoolSize(config.MYSQL_MAX_POOL_SIZE);
+        hikariConfig.setMaximumPoolSize(config.MYSQL_READ_MAX_POOL_SIZE);
         hikariConfig.setMinimumIdle(2);
         hikariConfig.setIdleTimeout(30000);
         hikariConfig.setMaxLifetime(600000);

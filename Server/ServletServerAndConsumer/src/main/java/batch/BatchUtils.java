@@ -10,7 +10,7 @@ public class BatchUtils {
     }
 
     public static long estimateRowCount(Configuration config) {
-        try (Connection conn = DriverManager.getConnection(config.MYSQL_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD); PreparedStatement stmt = conn.prepareStatement(config.AGGREGATION_FULL_ROW_COUNT_SQL)) {
+        try (Connection conn = DriverManager.getConnection(config.MYSQL_READ_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD); PreparedStatement stmt = conn.prepareStatement(config.AGGREGATION_FULL_ROW_COUNT_SQL)) {
             stmt.setString(1, config.MYSQL_TABLE_SCHEMA);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
