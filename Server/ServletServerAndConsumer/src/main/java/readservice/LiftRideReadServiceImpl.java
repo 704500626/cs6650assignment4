@@ -3,21 +3,30 @@ package readservice;
 import bloomfilter.BloomFilterUtils;
 import bloomfilter.LiftRideBloomFilter;
 import cache.CacheWriterWorker;
+import cache.LocalLRUCache;
 import cache.RedisCacheClient;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import dao.LiftRideReader;
 import grpc.BatchAggregationServiceGrpc;
-import grpc.BatchAggregationServiceProto.*;
+import grpc.BatchAggregationServiceProto.BloomFilterSnapshot;
+import grpc.BatchAggregationServiceProto.Empty;
 import grpc.LiftRideReadProto.*;
 import grpc.SkierReadServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import model.CacheHitLevel;
 import model.CacheWrite;
 import model.Configuration;
 
+import java.lang.reflect.Type;
+import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServiceImplBase {
     private final LiftRideReader dbReader;
@@ -25,10 +34,19 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
     private final Configuration config;
     private final BlockingQueue<CacheWrite> cacheQueue;
     private final Thread cacheWriterThread;
-    private final Gson gson = new Gson();
-    private volatile LiftRideBloomFilter bloomFilter;
-    private final ScheduledExecutorService refresher = Executors.newSingleThreadScheduledExecutor();
+
+    private final SkierDayRidesQuery skierDayRidesQuery;
+    private final ResortDaySkiersQuery resortDaySkiersQuery;
+    private final TotalVerticalQuery totalVerticalQuery;
+
+    private LocalLRUCache<String, String> localLRU; // optional
+    private ScheduledExecutorService lruRefresher;
+    private volatile LiftRideBloomFilter bloomFilter;  // optional
+    private ScheduledExecutorService bloomRefresher;
     private ManagedChannel batchServiceChannel;
+    private Map<CacheHitLevel, AtomicInteger> cacheStats; // optional
+    private ScheduledExecutorService metricsCollector;
+    private final AtomicInteger requestCounter = new AtomicInteger(0);
 
     public LiftRideReadServiceImpl(Configuration config) {
         this.config = config;
@@ -39,13 +57,96 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
                 config.LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE,
                 config.LIFTRIDE_READ_SERVICE_CACHE_FLUSH_INTERVAL_MS));
         this.cacheWriterThread.start();
+
+        if (config.LIFTRIDE_READ_SERVICE_LRU_SWITCH) {
+            setupLocalLRU(config);
+        }
+
+        if (config.LIFTRIDE_READ_SERVICE_COLLECT_METRICS) {
+            setupMetricsCollector();
+        }
+
         if (config.BLOOM_FILTER_SWITCH) {
             setupBloomFilterScheduledUpdate(config);
         }
+
+        skierDayRidesQuery = new SkierDayRidesQuery(config, dbReader, cache, cacheQueue, bloomFilter, localLRU);
+        resortDaySkiersQuery = new ResortDaySkiersQuery(config, dbReader, cache, cacheQueue, bloomFilter, localLRU);
+        totalVerticalQuery = new TotalVerticalQuery(config, dbReader, cache, cacheQueue, bloomFilter, localLRU);
+    }
+
+    private void setupMetricsCollector() {
+        cacheStats = new ConcurrentHashMap<>();
+        for (CacheHitLevel level : CacheHitLevel.values()) {
+            cacheStats.put(level, new AtomicInteger());
+        }
+        metricsCollector = Executors.newSingleThreadScheduledExecutor();
+        metricsCollector.scheduleAtFixedRate(() -> {
+            try {
+                System.out.println("==== Cache Stats ====");
+                System.out.println("NUM_REQUESTS: " + requestCounter.get());
+                for (var entry : cacheStats.entrySet()) {
+                    System.out.printf("%s: %d%n", entry.getKey(), entry.getValue().get());
+                }
+                System.out.println("CACHE_WRITE_FAILURE: " + (skierDayRidesQuery.getCacheWriteFailure().get() + resortDaySkiersQuery.getCacheWriteFailure().get() + totalVerticalQuery.getCacheWriteFailure().get()));
+                System.out.println("=====================");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, config.LIFTRIDE_READ_SERVICE_METRICS_OUTPUT_INTERVAL_SEC, config.LIFTRIDE_READ_SERVICE_METRICS_OUTPUT_INTERVAL_SEC, TimeUnit.SECONDS);
+    }
+
+    private void setupLocalLRU(Configuration config) {
+        lruRefresher = Executors.newSingleThreadScheduledExecutor();
+        localLRU = new LocalLRUCache<>(config.LIFTRIDE_READ_SERVICE_LRU_CAPACITY);
+
+        List<String> hotKeyPatterns = List.of(
+                config.AGGREGATION_HOT_KEY_UNIQUE_SKIERS,
+                config.AGGREGATION_HOT_KEY_DAILY_VERTICAL,
+                config.AGGREGATION_HOT_KEY_SINGLE_SEASON_VERTICAL,
+                config.AGGREGATION_HOT_KEY_ALL_SEASON_VERTICAL
+        );
+
+        int perPatternLimit = config.LIFTRIDE_READ_SERVICE_LRU_CAPACITY / hotKeyPatterns.size();
+
+        for (String pattern : hotKeyPatterns) {
+            try {
+                Collection<String> keys = cache.scanKeys(pattern, perPatternLimit);
+                for (String key : keys) {
+                    String value = cache.getSync().get(key);
+                    if (value != null) {
+                        localLRU.put(key, value);
+                    }
+                }
+                System.out.printf("[LRU Prewarm] Loaded %d keys for pattern: %s%n", keys.size(), pattern);
+            } catch (Exception e) {
+                System.err.printf("[LRU Prewarm] Failed for pattern: %s - %s%n", pattern, e.getMessage());
+            }
+        }
+
+        lruRefresher.scheduleAtFixedRate(() -> {
+            try {
+                for (String key : localLRU.keySetSnapshot()) {
+                    String value = cache.getSync().get(key);
+                    if (value != null) {
+                        localLRU.put(key, value);
+                    } else {
+                        localLRU.remove(key); // evict dead Redis keys
+                    }
+                }
+                System.out.println("[LRU Refresh] Successfully updated from Redis.");
+            } catch (Exception e) {
+                System.err.println("[LRU Refresh] Failed: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }, 0, config.LIFTRIDE_READ_SERVICE_LRU_REFRESH_INTERVAL_SEC, TimeUnit.SECONDS);
     }
 
     private void setupBloomFilterScheduledUpdate(Configuration config) {
         try {
+            bloomFilter = new LiftRideBloomFilter(config);
+            bloomRefresher = Executors.newSingleThreadScheduledExecutor();
+
             batchServiceChannel = ManagedChannelBuilder.forAddress(
                     config.AGGREGATION_SERVICE_HOST, config.AGGREGATION_SERVICE_PORT
             ).usePlaintext().build();
@@ -53,14 +154,13 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
             BatchAggregationServiceGrpc.BatchAggregationServiceBlockingStub stub =
                     BatchAggregationServiceGrpc.newBlockingStub(batchServiceChannel);
 
-            refresher.scheduleAtFixedRate(() -> {
+            bloomRefresher.scheduleAtFixedRate(() -> {
                 try {
                     BloomFilterSnapshot snapshot = stub.getBloomFilterSnapshot(Empty.newBuilder().build());
-                    bloomFilter = new LiftRideBloomFilter(
-                            BloomFilterUtils.decompressAndDeserialize(snapshot.getUniqueSkiersFilter().toByteArray()),
-                            BloomFilterUtils.decompressAndDeserialize(snapshot.getDailyVerticalFilter().toByteArray()),
-                            BloomFilterUtils.decompressAndDeserialize(snapshot.getSeasonVerticalFilter().toByteArray()),
-                            BloomFilterUtils.decompressAndDeserialize(snapshot.getTotalVerticalFilter().toByteArray()));
+                    bloomFilter.setUniqueSkiersFilter(BloomFilterUtils.decompressAndDeserialize(snapshot.getUniqueSkiersFilter().toByteArray()));
+                    bloomFilter.setDailyVerticalFilter(BloomFilterUtils.decompressAndDeserialize(snapshot.getDailyVerticalFilter().toByteArray()));
+                    bloomFilter.setSeasonVerticalFilter(BloomFilterUtils.decompressAndDeserialize(snapshot.getSeasonVerticalFilter().toByteArray()));
+                    bloomFilter.setTotalVerticalFilter(BloomFilterUtils.decompressAndDeserialize(snapshot.getTotalVerticalFilter().toByteArray()));
                     System.out.println("[BloomFilter Refresh] Successfully updated from BatchAggregationService.");
                 } catch (Exception e) {
                     System.err.println("[BloomFilter Refresh] Failed: " + e.getMessage());
@@ -88,26 +188,11 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
         String itemKey = cache.getUniqueSkierCountKey(resortId, seasonId, dayId);
 
         try {
-            if (config.BLOOM_FILTER_SWITCH && bloomFilter != null && !bloomFilter.getUniqueSkiersFilter().mightContain(itemKey)) {
-//                System.out.printf("[getUniqueSkiers] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
-                responseObserver.onNext(SkierCountResponse.newBuilder().setSkierCount(0).build());
-                responseObserver.onCompleted();
-                return;
+            CacheHitLevel cacheHitLevel = resortDaySkiersQuery.queryResortDaySkiers(responseObserver, itemKey, resortId, seasonId, dayId);
+            if (config.LIFTRIDE_READ_SERVICE_COLLECT_METRICS) {
+                requestCounter.incrementAndGet();
+                cacheStats.get(cacheHitLevel).incrementAndGet();
             }
-
-            Integer cached = cache.getUniqueSkierCount(itemKey);
-            if (cached != null) {
-//                System.out.printf("[getUniqueSkiers] Cache hit: key=%s, value=%d%n", itemKey, cached);
-                responseObserver.onNext(SkierCountResponse.newBuilder().setSkierCount(cached).build());
-                responseObserver.onCompleted();
-                return;
-            }
-//            System.out.printf("[getUniqueSkiers] Cache miss: key=%s%n", itemKey);
-
-            int count = dbReader.getResortUniqueSkiers(resortId, seasonId, dayId);
-//            System.out.printf("[getUniqueSkiers] Fetched from DB: key=%s, value=%d%n", itemKey, count);
-            cacheQueue.offer(new CacheWrite(itemKey, String.valueOf(count)));
-            responseObserver.onNext(SkierCountResponse.newBuilder().setSkierCount(count).build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             e.printStackTrace();
@@ -124,26 +209,11 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
         String itemKey = cache.getSkierDayVerticalKey(resortId, seasonId, dayId, skierId);
 
         try {
-            if (config.BLOOM_FILTER_SWITCH && bloomFilter != null && !bloomFilter.getDailyVerticalFilter().mightContain(itemKey)) {
-//                System.out.printf("[getDailyVertical] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
-                responseObserver.onNext(VerticalIntResponse.newBuilder().setTotalVertical(0).build());
-                responseObserver.onCompleted();
-                return;
+            CacheHitLevel cacheHitLevel = skierDayRidesQuery.querySkierDayRides(responseObserver, itemKey, resortId, seasonId, dayId, skierId);
+            if (config.LIFTRIDE_READ_SERVICE_COLLECT_METRICS) {
+                requestCounter.incrementAndGet();
+                cacheStats.get(cacheHitLevel).incrementAndGet();
             }
-
-            Integer cached = cache.getSkierDayVertical(itemKey);
-            if (cached != null) {
-//                System.out.printf("[getDailyVertical] Cache hit: key=%s, value=%d%n", itemKey, cached);
-                responseObserver.onNext(VerticalIntResponse.newBuilder().setTotalVertical(cached).build());
-                responseObserver.onCompleted();
-                return;
-            }
-//            System.out.printf("[getDailyVertical] Cache miss: key=%s%n", itemKey);
-
-            int vertical = dbReader.getSkierDayVertical(resortId, seasonId, dayId, skierId);
-//            System.out.printf("[getDailyVertical] Fetched from DB: key=%s, value=%d%n", itemKey, vertical);
-            cacheQueue.offer(new CacheWrite(itemKey, String.valueOf(vertical)));
-            responseObserver.onNext(VerticalIntResponse.newBuilder().setTotalVertical(vertical).build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             e.printStackTrace();
@@ -158,57 +228,17 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
         String seasonId = request.getSeasonID();  // could be empty
         boolean withSeason = seasonId != null && !seasonId.isEmpty();
         try {
+            CacheHitLevel cacheHitLevel;
             if (withSeason) {
-                String itemKey = cache.getSingleSeasonVerticalKey(skierId, resortId, seasonId);
-                if (config.BLOOM_FILTER_SWITCH && bloomFilter != null && !bloomFilter.getSeasonVerticalFilter().mightContain(itemKey)) {
-//                    System.out.printf("[getTotalVertical-season] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
-                    responseObserver.onNext(VerticalListResponse.newBuilder().build()); // empty list
-                    responseObserver.onCompleted();
-                    return;
-                }
-
-                Integer cached = cache.getSingleSeasonVertical(itemKey);
-                if (cached != null) {
-//                    System.out.printf("[getTotalVertical-season] Cache hit: key=%s, value=%d%n", itemKey, cached);
-                    responseObserver.onNext(VerticalListResponse.newBuilder().addRecords(VerticalRecord.newBuilder().setSeasonID(seasonId).setTotalVertical(cached).build()).build());
-                    responseObserver.onCompleted();
-                    return;
-                }
-//                System.out.printf("[getTotalVertical-season] Cache miss: key=%s%n", itemKey);
-
-                List<VerticalRecord> results = dbReader.getSkierResortTotals(skierId, resortId, seasonId);
-//                System.out.printf("[getTotalVertical-season] Fetched from DB: key=%s, results size=%d%n", itemKey, results.size());
-                if (!results.isEmpty()) {
-                    cacheQueue.offer(new CacheWrite(itemKey, String.valueOf(results.get(0).getTotalVertical())));
-                } else {
-                    cacheQueue.offer(new CacheWrite(itemKey, String.valueOf(0)));
-                }
-                responseObserver.onNext(VerticalListResponse.newBuilder().addAllRecords(results).build());
-                responseObserver.onCompleted();
+                cacheHitLevel = totalVerticalQuery.queryTotalVerticalBySeason(responseObserver, skierId, resortId, seasonId);
             } else {
-                String itemKey = cache.getAllSeasonsVerticalKey(skierId, resortId);
-                if (config.BLOOM_FILTER_SWITCH && bloomFilter != null && !bloomFilter.getTotalVerticalFilter().mightContain(itemKey)) {
-//                    System.out.printf("[getTotalVertical-all] Bloom filter negative: key=%s -> skipping DB%n", itemKey);
-                    responseObserver.onNext(VerticalListResponse.newBuilder().build());
-                    responseObserver.onCompleted();
-                    return;
-                }
-
-                List<VerticalRecord> cached = cache.getAllSeasonVerticals(itemKey);
-                if (cached != null) {
-//                    System.out.printf("[getTotalVertical-all] Cache hit: key=%s, size=%d%n", itemKey, cached.size());
-                    responseObserver.onNext(VerticalListResponse.newBuilder().addAllRecords(cached).build());
-                    responseObserver.onCompleted();
-                    return;
-                }
-//                System.out.printf("[getTotalVertical-all] Cache miss: key=%s%n", itemKey);
-
-                List<VerticalRecord> results = dbReader.getSkierResortTotals(skierId, resortId, "");
-//                System.out.printf("[getTotalVertical-all] Fetched from DB: key=%s, results size=%d%n", itemKey, results.size());
-                cacheQueue.offer(new CacheWrite(itemKey, gson.toJson(results)));
-                responseObserver.onNext(VerticalListResponse.newBuilder().addAllRecords(results).build());
-                responseObserver.onCompleted();
+                cacheHitLevel = totalVerticalQuery.queryTotalVerticalAllSeason(responseObserver, skierId, resortId);
             }
+            if (config.LIFTRIDE_READ_SERVICE_COLLECT_METRICS) {
+                requestCounter.incrementAndGet();
+                cacheStats.get(cacheHitLevel).incrementAndGet();
+            }
+            responseObserver.onCompleted();
         } catch (Exception e) {
             e.printStackTrace();
             responseObserver.onError(e);
@@ -218,20 +248,35 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
     public void close() {
         dbReader.close();
         cache.close();
-        if (batchServiceChannel != null) {
+        if (config.LIFTRIDE_READ_SERVICE_LRU_SWITCH) {
             try {
-                batchServiceChannel.shutdown();
-                batchServiceChannel.awaitTermination(30, TimeUnit.SECONDS);
+                lruRefresher.shutdown();
+                lruRefresher.awaitTermination(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
-        refresher.shutdown();
-        try {
-            refresher.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+
+        if (config.LIFTRIDE_READ_SERVICE_COLLECT_METRICS) {
+            try {
+                metricsCollector.shutdown();
+                metricsCollector.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
+
+        if (config.BLOOM_FILTER_SWITCH) {
+            try {
+                batchServiceChannel.shutdown();
+                batchServiceChannel.awaitTermination(10, TimeUnit.SECONDS);
+                bloomRefresher.shutdown();
+                bloomRefresher.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         if (cacheWriterThread != null && cacheWriterThread.isAlive()) {
             cacheWriterThread.interrupt();
             try {

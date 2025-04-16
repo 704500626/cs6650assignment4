@@ -205,6 +205,26 @@ public class RedisCacheClient {
         return keys;
     }
 
+    public Set<String> scanKeys(String pattern, int maxKeys) {
+        Set<String> keys = new HashSet<>();
+        String cursor = "0";
+        do {
+            KeyScanCursor<String> scanResult = sync.scan(
+                    ScanCursor.of(cursor),
+                    io.lettuce.core.ScanArgs.Builder.matches(pattern).limit(100)
+            );
+            cursor = scanResult.getCursor();
+
+            for (String key : scanResult.getKeys()) {
+                keys.add(key);
+                if (keys.size() >= maxKeys) {
+                    return keys;
+                }
+            }
+        } while (!cursor.equals("0"));
+        return keys;
+    }
+
     public void close() {
         connection.close();
         redisClient.shutdown();

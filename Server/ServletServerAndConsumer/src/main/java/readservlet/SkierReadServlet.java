@@ -9,6 +9,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import model.Configuration;
+import model.GetSkiersVerticalRequest;
 import model.ResponseMsg;
 import ratelimiter.RateLimiter;
 

@@ -27,18 +27,22 @@ public class LiftRideWriteService {
     // Shared flush scheduler for all DBWriters
     private static final ScheduledExecutorService flushScheduler = Executors.newSingleThreadScheduledExecutor();
 
-    public static void main(String[] args) throws Exception {
-        setupRabbitMQConnections();
-        setupFlushScheduler();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            cleanup();
-            flushScheduler.shutdown();
-            try {
-                flushScheduler.awaitTermination(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }));
+    public static void main(String[] args) {
+        try {
+            setupRabbitMQConnections();
+            setupFlushScheduler();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                cleanup();
+                flushScheduler.shutdown();
+                try {
+                    flushScheduler.awaitTermination(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Sets up RabbitMQ connection (only one connection is shared)

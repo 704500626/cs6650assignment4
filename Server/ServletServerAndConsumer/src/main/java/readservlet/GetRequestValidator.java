@@ -1,5 +1,9 @@
 package readservlet;
 
+import model.GetResortDayTotalRequest;
+import model.GetSkiersDayRidesRequest;
+import model.GetSkiersVerticalRequest;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.HashSet;

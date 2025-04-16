@@ -57,6 +57,11 @@ public class Configuration {
     public int LIFTRIDE_READ_SERVICE_CACHE_QUEUE_SIZE = 5000; // KNOB: the maximum number of cache write messages that can be queued in read service
     public int LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE = 100; // KNOB: the batch size of the cache write messages
     public int LIFTRIDE_READ_SERVICE_CACHE_FLUSH_INTERVAL_MS = 1000; // KNOB: the time interval of batch cache write.
+    public boolean LIFTRIDE_READ_SERVICE_LRU_SWITCH = true; // KNOB: turn on local LRU or not.
+    public int LIFTRIDE_READ_SERVICE_LRU_CAPACITY = 10000; // KNOB: the maximum number of entries stored in local LRU
+    public int LIFTRIDE_READ_SERVICE_LRU_REFRESH_INTERVAL_SEC = 5; // KNOB: the time interval of local LRU update from Redis cache.
+    public boolean LIFTRIDE_READ_SERVICE_COLLECT_METRICS = true;  // turn on metrics collection or not
+    public int LIFTRIDE_READ_SERVICE_METRICS_OUTPUT_INTERVAL_SEC = 10; // metrics collection interval
 
     public boolean BLOOM_FILTER_SWITCH = true; // KNOB: turn on bloom filter or not. Always recommend on.
     public int BLOOM_FILTER_CAPACITY = 1000000;
@@ -182,6 +187,11 @@ public class Configuration {
         LIFTRIDE_READ_SERVICE_CACHE_QUEUE_SIZE = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_CACHE_QUEUE_SIZE"));
         LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE= Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE"));
         LIFTRIDE_READ_SERVICE_CACHE_FLUSH_INTERVAL_MS = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_CACHE_FLUSH_INTERVAL_MS"));
+        LIFTRIDE_READ_SERVICE_LRU_SWITCH = Boolean.parseBoolean(properties.getProperty("LIFTRIDE_READ_SERVICE_LRU_SWITCH"));
+        LIFTRIDE_READ_SERVICE_LRU_CAPACITY = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_LRU_CAPACITY"));
+        LIFTRIDE_READ_SERVICE_LRU_REFRESH_INTERVAL_SEC = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_LRU_REFRESH_INTERVAL_SEC"));
+        LIFTRIDE_READ_SERVICE_COLLECT_METRICS = Boolean.parseBoolean(properties.getProperty("LIFTRIDE_READ_SERVICE_COLLECT_METRICS"));
+        LIFTRIDE_READ_SERVICE_METRICS_OUTPUT_INTERVAL_SEC = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_METRICS_OUTPUT_INTERVAL_SEC"));
 
         AGGREGATION_SERVICE_HOST = properties.getProperty("AGGREGATION_SERVICE_HOST");
         AGGREGATION_SERVICE_PORT = Integer.parseInt(properties.getProperty("AGGREGATION_SERVICE_PORT"));
