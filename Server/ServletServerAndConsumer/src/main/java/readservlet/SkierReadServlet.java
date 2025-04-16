@@ -41,6 +41,7 @@ public class SkierReadServlet extends HttpServlet {
         res.setContentType("text/plain");
         String urlPath = req.getPathInfo(); // "/7/seasons/2025/days/1/skiers/96541"
         if (!GetRequestValidator.isUrlValid(urlPath)) {
+            System.err.println("Invalid inputs: " + urlPath);
             res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             res.getWriter().write(gson.toJson(new ResponseMsg("Invalid inputs: Missing path info")));
             return;
@@ -62,7 +63,6 @@ public class SkierReadServlet extends HttpServlet {
                 case VERTICAL_LOOKUP: {
                     GetSkiersVerticalRequest verticalReq = GetRequestValidator.parseSkierDayRequest(req, parts);
                     VerticalRequest request = VerticalRequest.newBuilder().setSkierID(verticalReq.skierID).setResortID(Integer.parseInt(verticalReq.resortID)).setSeasonID(verticalReq.seasonID == null ? "" : verticalReq.seasonID).build();
-
                     VerticalListResponse response = stub.getTotalVertical(request);
                     JsonArray jsonArray = new JsonArray();
                     for (VerticalRecord record : response.getRecordsList()) {
@@ -71,7 +71,6 @@ public class SkierReadServlet extends HttpServlet {
                         obj.addProperty("totalVertical", record.getTotalVertical());
                         jsonArray.add(obj);
                     }
-
                     JsonObject finalObj = new JsonObject();
                     finalObj.add("records", jsonArray);
                     res.setStatus(HttpServletResponse.SC_OK);
@@ -83,7 +82,6 @@ public class SkierReadServlet extends HttpServlet {
                 case SKIERS_DAY_RIDES: {
                     var ridesReq = GetRequestValidator.parseSkierDayRideRequest(parts);
                     SkierDayRequest ridesRequest = SkierDayRequest.newBuilder().setSkierID(ridesReq.skierID).setResortID(ridesReq.resortID).setSeasonID(String.valueOf(ridesReq.seasonID)).setDayID(ridesReq.dayID).build();
-
                     VerticalIntResponse ridesResp = stub.getSkierDayRides(ridesRequest);
                     JsonObject result = new JsonObject();
                     result.addProperty("totalVertical", ridesResp.getTotalVertical());
@@ -95,27 +93,26 @@ public class SkierReadServlet extends HttpServlet {
                 case RESORT_DAY_TOTAL: {
                     var resortReq = GetRequestValidator.parseResortDayTotalRequest(parts);
                     ResortDayRequest resortRequest = ResortDayRequest.newBuilder().setResortID(resortReq.resortID).setSeasonID(String.valueOf(resortReq.seasonID)).setDayID(resortReq.dayID).build();
-
                     SkierCountResponse resortResp = stub.getResortDaySkiers(resortRequest);
-
                     JsonObject result = new JsonObject();
                     result.addProperty("skierCount", resortResp.getSkierCount());
-
                     res.setStatus(HttpServletResponse.SC_OK);
                     res.setContentType("application/json");
                     res.getWriter().write(result.toString());
                     break;
                 }
                 default:
+                    System.err.println("Unrecognized request type: " + urlPath);
                     res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                     res.getWriter().write("{\"message\":\"Unknown request type\"}");
             }
         } catch (NumberFormatException e) {
+            e.printStackTrace();
             res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             res.getWriter().write(gson.toJson(new ResponseMsg("Error parsing parameters: " + e.getMessage())));
         } catch (StatusRuntimeException e) {
+            e.printStackTrace();
             if (e.getStatus().getCode() == Status.Code.RESOURCE_EXHAUSTED) {
-                System.err.println("Rate limit hit: " + e.getStatus().getDescription());
                 res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                 res.getWriter().write(gson.toJson(new ResponseMsg("Service Unavailable")));
             } else {
@@ -123,6 +120,7 @@ public class SkierReadServlet extends HttpServlet {
                 res.getWriter().write(gson.toJson(new ResponseMsg("Unknown Service Error")));
             }
         } catch (Exception e) {
+            e.printStackTrace();
             res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             res.getWriter().write(gson.toJson(new ResponseMsg("Internal Server Error")));
         }
