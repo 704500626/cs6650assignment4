@@ -44,10 +44,6 @@ public class Configuration {
     public String REDIS_KEY_PATTERN_DAILY_VERTICAL = "resort:{resortID}:season:{seasonID}:day:{dayID}:skier:{skierID}:vertical";
     public String REDIS_KEY_PATTERN_ALL_SEASON_VERTICALS = "skier:{skierID}:resort:{resortID}:all_verticals";
     public String REDIS_KEY_PATTERN_SINGLE_SEASON_VERTICAL = "skier:{skierId}:resort:{resortId}:season:{seasonId}:vertical";
-
-    public boolean REDIS_BLOOM_FILTER_SWITCH = true; // KNOB: turn on bloom filter or not. Always recommend on.
-    public int REDIS_BLOOM_FILTER_CAPACITY = 1000000;
-    public double REDIS_BLOOM_FILTER_ERROR_RATE = 0.01;
     public String REDIS_BLOOM_FILTER_UNIQUE_SKIERS = "bloom:unique_skiers";
     public String REDIS_BLOOM_FILTER_DAILY_VERTICAL = "bloom:daily_vertical";
     public String REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS = "bloom:all_vertical";
@@ -55,9 +51,22 @@ public class Configuration {
 
     public String LIFTRIDE_READ_SERVICE_HOST = "localhost";
     public int LIFTRIDE_READ_SERVICE_PORT = 8081;
-    public int LIFTRIDE_READ_SERVICE_MIN_THREAD = 16; // KNOB: the minimum number of threads handling the incoming RPC requests in read service
-    public int LIFTRIDE_READ_SERVICE_MAX_THREAD = 128;// KNOB: the maximum number of threads handling the incoming RPC requests in read service
-    public int LIFTRIDE_READ_SERVICE_QUEUE_SIZE = 10000; // KNOB: the maximum number of incoming RPC requests that can be queued in read service
+    public int LIFTRIDE_READ_SERVICE_MIN_THREAD = 100; // KNOB: the minimum number of threads handling the incoming RPC requests in read service
+    public int LIFTRIDE_READ_SERVICE_MAX_THREAD = 500;// KNOB: the maximum number of threads handling the incoming RPC requests in read service
+    public int LIFTRIDE_READ_SERVICE_REQUEST_QUEUE_SIZE = 10000; // KNOB: the maximum number of incoming RPC requests that can be queued in read service
+    public int LIFTRIDE_READ_SERVICE_CACHE_QUEUE_SIZE = 5000; // KNOB: the maximum number of cache write messages that can be queued in read service
+    public int LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE = 100; // KNOB: the batch size of the cache write messages
+    public int LIFTRIDE_READ_SERVICE_CACHE_FLUSH_INTERVAL_MS = 1000; // KNOB: the time interval of batch cache write.
+
+    public boolean BLOOM_FILTER_SWITCH = true; // KNOB: turn on bloom filter or not. Always recommend on.
+    public int BLOOM_FILTER_CAPACITY = 1000000;
+    public double BLOOM_FILTER_ERROR_RATE = 0.01;
+
+    public String AGGREGATION_SERVICE_HOST = "localhost";
+    public int AGGREGATION_SERVICE_PORT = 8082;
+    public int AGGREGATION_SERVICE_MIN_THREAD = 16;
+    public int AGGREGATION_SERVICE_MAX_THREAD = 128;
+    public int AGGREGATION_SERVICE_REQUEST_QUEUE_SIZE = 500;
 
     public String AGGREGATION_FULL_ROW_COUNT_SQL = "SELECT COUNT(*) AS row_count FROM LiftRides";
     public String AGGREGATION_FULL_UNIQUE_SKIERS_SQL = "SELECT resort_id, season_id, day_id, COUNT(DISTINCT skier_id) as count FROM LiftRides GROUP BY resort_id, season_id, day_id";
@@ -71,6 +80,7 @@ public class Configuration {
     public String AGGREGATION_HOT_KEY_DAILY_VERTICAL = "resort:*:season:*:day:*:skier:*:vertical";
     public String AGGREGATION_HOT_KEY_SINGLE_SEASON_VERTICAL = "skier:*:resort:*:season:*:vertical";
     public String AGGREGATION_HOT_KEY_ALL_SEASON_VERTICAL = "skier:*:resort:*:all_verticals";
+    public boolean AGGREGATION_FULL_SWITCH = false; // KNOB(major): enable full aggregation or not. When enabled, the aggregation service will periodically aggregation all bloom filters and all possible combinations of keys for the queries
     public long AGGREGATION_FULL_MAX_ROWS = 1000000L; // KNOB: the maximum number of rows in the DB that can perform full aggregation. If the number of rows in the DB is larger than this value, full aggregation won't execute.
     public int AGGREGATION_FULL_INTERVAL_SEC = 30; // KNOB: the time interval for every full aggregation
     public int AGGREGATION_BLOOM_ONLY_INTERVAL_SEC = 10; // KNOB: the time interval for every bloom filter aggregation
@@ -78,8 +88,8 @@ public class Configuration {
 
     public boolean RATE_LIMITER_READ_SWITCH = false; // KNOB: turn on rate limiter for read servlets or not
     public boolean RATE_LIMITER_WRITE_SWITCH = true; // KNOB: turn on rate limiter for write servlets or not
-    public String RATE_LIMIT_READ_MODE = "LOCAL";
-    public String RATE_LIMIT_WRITE_MODE = "LOCAL"; // e.g. "LOCAL", "REMOTE", or "REDIS"
+    public String RATE_LIMITER_READ_MODE = "LOCAL"; // e.g. "LOCAL", "REMOTE", or "REDIS"
+    public String RATE_LIMITER_WRITE_MODE = "LOCAL"; // e.g. "LOCAL", "REMOTE", or "REDIS"
     public int RATE_LIMITER_MAX_BACKOFF_MS = 2000; // KNOB: the maximum milliseconds of retry backoff(wait) time
     public int RATE_LIMITER_READ_MAX_TOKENS = 5000; // KNOB: the maximum number of tokens of read servlets
     public int RATE_LIMITER_READ_REFILL_RATE = 5000; // KNOB: the refill rate of tokens of read servlets, which is roughly the maximum number of throughput allowed
@@ -161,14 +171,23 @@ public class Configuration {
         REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS = properties.getProperty("REDIS_BLOOM_FILTER_ALL_SEASON_VERTICALS");
         REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL = properties.getProperty("REDIS_BLOOM_FILTER_SINGLE_SEASON_VERTICAL");
 
-        REDIS_BLOOM_FILTER_SWITCH = Boolean.parseBoolean(properties.getProperty("REDIS_BLOOM_FILTER_SWITCH"));
-        REDIS_BLOOM_FILTER_CAPACITY = Integer.parseInt(properties.getProperty("REDIS_BLOOM_FILTER_CAPACITY"));
-        REDIS_BLOOM_FILTER_ERROR_RATE = Double.parseDouble(properties.getProperty("REDIS_BLOOM_FILTER_ERROR_RATE"));
+        BLOOM_FILTER_SWITCH = Boolean.parseBoolean(properties.getProperty("BLOOM_FILTER_SWITCH"));
+        BLOOM_FILTER_CAPACITY = Integer.parseInt(properties.getProperty("BLOOM_FILTER_CAPACITY"));
+        BLOOM_FILTER_ERROR_RATE = Double.parseDouble(properties.getProperty("BLOOM_FILTER_ERROR_RATE"));
 
         LIFTRIDE_READ_SERVICE_PORT = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_PORT"));
         LIFTRIDE_READ_SERVICE_MIN_THREAD = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_MIN_THREAD"));
         LIFTRIDE_READ_SERVICE_MAX_THREAD = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_MAX_THREAD"));
-        LIFTRIDE_READ_SERVICE_QUEUE_SIZE = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_QUEUE_SIZE"));
+        LIFTRIDE_READ_SERVICE_REQUEST_QUEUE_SIZE = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_REQUEST_QUEUE_SIZE"));
+        LIFTRIDE_READ_SERVICE_CACHE_QUEUE_SIZE = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_CACHE_QUEUE_SIZE"));
+        LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE= Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE"));
+        LIFTRIDE_READ_SERVICE_CACHE_FLUSH_INTERVAL_MS = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_CACHE_FLUSH_INTERVAL_MS"));
+
+        AGGREGATION_SERVICE_HOST = properties.getProperty("AGGREGATION_SERVICE_HOST");
+        AGGREGATION_SERVICE_PORT = Integer.parseInt(properties.getProperty("AGGREGATION_SERVICE_PORT"));
+        AGGREGATION_SERVICE_MIN_THREAD = Integer.parseInt(properties.getProperty("AGGREGATION_SERVICE_MIN_THREAD"));
+        AGGREGATION_SERVICE_MAX_THREAD = Integer.parseInt(properties.getProperty("AGGREGATION_SERVICE_MAX_THREAD"));
+        AGGREGATION_SERVICE_REQUEST_QUEUE_SIZE = Integer.parseInt(properties.getProperty("AGGREGATION_SERVICE_REQUEST_QUEUE_SIZE"));
 
         AGGREGATION_FULL_ROW_COUNT_SQL = properties.getProperty("AGGREGATION_FULL_ROW_COUNT_SQL");
         AGGREGATION_FULL_UNIQUE_SKIERS_SQL = properties.getProperty("AGGREGATION_FULL_UNIQUE_SKIERS_SQL");
@@ -183,6 +202,7 @@ public class Configuration {
         AGGREGATION_HOT_KEY_SINGLE_SEASON_VERTICAL = properties.getProperty("AGGREGATION_HOT_KEY_SINGLE_SEASON_VERTICAL");
         AGGREGATION_HOT_KEY_ALL_SEASON_VERTICAL = properties.getProperty("AGGREGATION_HOT_KEY_ALL_SEASON_VERTICAL");
 
+        AGGREGATION_FULL_SWITCH = Boolean.parseBoolean(properties.getProperty("AGGREGATION_FULL_SWITCH"));
         AGGREGATION_FULL_MAX_ROWS = Long.parseLong(properties.getProperty("AGGREGATION_FULL_MAX_ROWS"));
         AGGREGATION_FULL_INTERVAL_SEC = Integer.parseInt(properties.getProperty("AGGREGATION_FULL_INTERVAL_SEC"));
         AGGREGATION_BLOOM_ONLY_INTERVAL_SEC = Integer.parseInt(properties.getProperty("AGGREGATION_BLOOM_ONLY_INTERVAL_SEC"));
@@ -191,8 +211,8 @@ public class Configuration {
         RATE_LIMITER_MAX_BACKOFF_MS = Integer.parseInt(properties.getProperty("RATE_LIMITER_MAX_BACKOFF_MS"));
         RATE_LIMITER_READ_SWITCH = Boolean.parseBoolean(properties.getProperty("RATE_LIMITER_READ_SWITCH"));
         RATE_LIMITER_WRITE_SWITCH = Boolean.parseBoolean(properties.getProperty("RATE_LIMITER_WRITE_SWITCH"));
-        RATE_LIMIT_READ_MODE = properties.getProperty("RATE_LIMITER_READ_MODE");
-        RATE_LIMIT_WRITE_MODE = properties.getProperty("RATE_LIMITER_WRITE_MODE");
+        RATE_LIMITER_READ_MODE = properties.getProperty("RATE_LIMITER_READ_MODE");
+        RATE_LIMITER_WRITE_MODE = properties.getProperty("RATE_LIMITER_WRITE_MODE");
         RATE_LIMITER_WRITE_SERVLET_GROUP_ID = properties.getProperty("RATE_LIMITER_WRITE_SERVLET_GROUP_ID");
         RATE_LIMITER_READ_SERVLET_GROUP_ID = properties.getProperty("RATE_LIMITER_READ_SERVLET_GROUP_ID");
         RATE_LIMITER_SERVICE_PORT = Integer.parseInt(properties.getProperty("RATE_LIMITER_SERVICE_PORT"));
@@ -204,10 +224,7 @@ public class Configuration {
         RATE_LIMITER_WRITE_MAX_TOKENS = Integer.parseInt(properties.getProperty("RATE_LIMITER_WRITE_MAX_TOKENS"));
         RATE_LIMITER_WRITE_REFILL_RATE = Integer.parseInt(properties.getProperty("RATE_LIMITER_WRITE_REFILL_RATE"));
 
-
-
         MAX_RETRIES = Integer.parseInt(properties.getProperty("MAX_RETRIES"));
-
 
         REDIS_KEY_UNIQUE_SKIER_COUNT = properties.getProperty("REDIS_KEY_UNIQUE_SKIER_COUNT");
         REDIS_KEY_VERTICAL_WITH_SKIER= properties.getProperty("REDIS_KEY_VERTICAL_WITH_SKIER");

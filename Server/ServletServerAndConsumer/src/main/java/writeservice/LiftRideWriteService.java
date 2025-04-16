@@ -33,6 +33,11 @@ public class LiftRideWriteService {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             cleanup();
             flushScheduler.shutdown();
+            try {
+                flushScheduler.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }));
     }
 

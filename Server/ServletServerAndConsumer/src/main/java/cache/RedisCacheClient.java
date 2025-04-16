@@ -1,5 +1,6 @@
 package cache;
 
+import old.RedisBloomCommand;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import grpc.LiftRideReadProto;

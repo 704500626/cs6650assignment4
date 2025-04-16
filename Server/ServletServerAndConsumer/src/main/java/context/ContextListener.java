@@ -30,7 +30,7 @@ public class ContextListener implements ServletContextListener {
             throw new RuntimeException(e);
         }
 
-        rateLimiter = RateLimiterFactory.create(config.RATE_LIMIT_READ_MODE, config.RATE_LIMITER_SERVICE_HOST, config.RATE_LIMITER_READ_SERVLET_GROUP_ID, config.RATE_LIMITER_SERVICE_PORT, config.RATE_LIMITER_READ_MAX_TOKENS, config.RATE_LIMITER_READ_REFILL_RATE);
+        rateLimiter = RateLimiterFactory.create(config.RATE_LIMITER_READ_MODE, config.RATE_LIMITER_SERVICE_HOST, config.RATE_LIMITER_READ_SERVLET_GROUP_ID, config.RATE_LIMITER_SERVICE_PORT, config.RATE_LIMITER_READ_MAX_TOKENS, config.RATE_LIMITER_READ_REFILL_RATE);
         channel = ManagedChannelBuilder
                 .forAddress(config.LIFTRIDE_READ_SERVICE_HOST, config.LIFTRIDE_READ_SERVICE_PORT)
                 .usePlaintext()

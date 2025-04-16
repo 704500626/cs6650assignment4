@@ -6,7 +6,6 @@ import model.LiftRideEventMsg;
 import model.ResponseMsg;
 import ratelimiter.RateLimiter;
 import ratelimiter.RateLimiterFactory;
-import ratelimiter.algorithms.TokenBucketRateLimiter;
 import utils.ConfigUtils;
 import utils.RequestValidator;
 
@@ -26,7 +25,7 @@ public class SkierWriteServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         config = ConfigUtils.getConfigurationForServlet(getServletContext());
-        rateLimiter = RateLimiterFactory.create(config.RATE_LIMIT_WRITE_MODE, config.RATE_LIMITER_SERVICE_HOST, config.RATE_LIMITER_READ_SERVLET_GROUP_ID, config.RATE_LIMITER_SERVICE_PORT, config.RATE_LIMITER_WRITE_MAX_TOKENS, config.RATE_LIMITER_WRITE_REFILL_RATE);
+        rateLimiter = RateLimiterFactory.create(config.RATE_LIMITER_WRITE_MODE, config.RATE_LIMITER_SERVICE_HOST, config.RATE_LIMITER_READ_SERVLET_GROUP_ID, config.RATE_LIMITER_SERVICE_PORT, config.RATE_LIMITER_WRITE_MAX_TOKENS, config.RATE_LIMITER_WRITE_REFILL_RATE);
         try {
             publisher = new RabbitMQPublisher(config);
         } catch (Exception e) {

@@ -9,7 +9,7 @@ public class BatchUtils {
         return "temp:" + key;
     }
 
-    public static long estimateRowCount(Configuration config) {
+    public static long getLiftRideRowCount(Configuration config) {
         try (Connection conn = DriverManager.getConnection(config.MYSQL_READ_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD);
              PreparedStatement stmt = conn.prepareStatement(config.AGGREGATION_FULL_ROW_COUNT_SQL);
              ResultSet rs = stmt.executeQuery()) {

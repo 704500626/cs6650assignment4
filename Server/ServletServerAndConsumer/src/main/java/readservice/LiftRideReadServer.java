@@ -18,18 +18,18 @@ public class LiftRideReadServer {
                 config.LIFTRIDE_READ_SERVICE_MIN_THREAD,          // core pool size
                 config.LIFTRIDE_READ_SERVICE_MAX_THREAD,                     // max pool size
                 60, TimeUnit.SECONDS,    // idle timeout
-                new LinkedBlockingQueue<>(config.LIFTRIDE_READ_SERVICE_QUEUE_SIZE)  // request queue size (like acceptCount)
+                new LinkedBlockingQueue<>(config.LIFTRIDE_READ_SERVICE_REQUEST_QUEUE_SIZE)  // request queue size (like acceptCount)
         );
 
-        LiftRideReadServiceImpl skierReadService = new LiftRideReadServiceImpl(config);
+        LiftRideReadServiceImpl liftRideReadService = new LiftRideReadServiceImpl(config);
         Server server = ServerBuilder.forPort(config.LIFTRIDE_READ_SERVICE_PORT)
                 .executor(executor)
-                .addService(skierReadService)
+                .addService(liftRideReadService)
                 .build()
                 .start();
         System.out.println("LiftRide Read Service gRPC server started on port " + config.LIFTRIDE_READ_SERVICE_PORT);
         server.awaitTermination();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(skierReadService::close));
+        Runtime.getRuntime().addShutdownHook(new Thread(liftRideReadService::close));
     }
 }

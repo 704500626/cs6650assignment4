@@ -1,0 +1,20 @@
+// bloom.proto
+syntax = "proto3";
+
+package batch;
+
+option java_package = "grpc";
+option java_outer_classname = "BatchAggregationServiceProto";
+
+service BatchAggregationService {
+  rpc GetBloomFilterSnapshot(Empty) returns (BloomFilterSnapshot);
+}
+
+message BloomFilterSnapshot {
+  bytes uniqueSkiersFilter = 1;
+  bytes dailyVerticalFilter = 2;
+  bytes seasonVerticalFilter = 3;
+  bytes totalVerticalFilter = 4;
+}
+
+message Empty {}
