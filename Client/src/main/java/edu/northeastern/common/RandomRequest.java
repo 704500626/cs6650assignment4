@@ -43,6 +43,11 @@ public class RandomRequest {
         return HttpRequest.newBuilder().uri(URI.create(url)).POST(HttpRequest.BodyPublishers.ofString(jsonBody)).header("Content-Type", "application/json").build();
     }
 
+    public static HttpRequest buildHttpRequestForGetRandomRequest(RandomRequest request, String serverUrl) {
+        String url = serverUrl + "/skiers/read/skiers/" + request.resortID + "/seasons/" + request.seasonID + "/days/" + request.dayID + "/skiers/" + request.skierID;
+        return HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
+    }
+
     public LiftRide getLiftRide() {
         return liftRide;
     }
