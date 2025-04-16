@@ -59,7 +59,7 @@ public class Configuration {
     public int LIFTRIDE_READ_SERVICE_MAX_THREAD = 128;// KNOB: the maximum number of threads handling the incoming RPC requests in read service
     public int LIFTRIDE_READ_SERVICE_QUEUE_SIZE = 10000; // KNOB: the maximum number of incoming RPC requests that can be queued in read service
 
-    public String AGGREGATION_FULL_ROW_COUNT_SQL = "SELECT TABLE_ROWS FROM information_schema.tables WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'LiftRides'";
+    public String AGGREGATION_FULL_ROW_COUNT_SQL = "SELECT COUNT(*) AS row_count FROM LiftRides";
     public String AGGREGATION_FULL_UNIQUE_SKIERS_SQL = "SELECT resort_id, season_id, day_id, COUNT(DISTINCT skier_id) as count FROM LiftRides GROUP BY resort_id, season_id, day_id";
     public String AGGREGATION_FULL_DAILY_VERTICAL_SQL = "SELECT resort_id, season_id, day_id, skier_id, SUM(10 * lift_id) as total_vertical FROM LiftRides GROUP BY resort_id, season_id, day_id, skier_id";
     public String AGGREGATION_FULL_SEASON_VERTICAL_SQL = "SELECT skier_id, resort_id, season_id, SUM(10 * lift_id) as total_vertical FROM LiftRides GROUP BY skier_id, resort_id, season_id";

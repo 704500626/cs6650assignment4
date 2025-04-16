@@ -40,7 +40,6 @@ public class SkierReadServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         res.setContentType("text/plain");
         String urlPath = req.getPathInfo(); // "/7/seasons/2025/days/1/skiers/96541"
-        System.out.println(urlPath);
         if (!GetRequestValidator.isUrlValid(urlPath)) {
             res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             res.getWriter().write(gson.toJson(new ResponseMsg("Invalid inputs: Missing path info")));
@@ -62,7 +61,6 @@ public class SkierReadServlet extends HttpServlet {
             switch (type) {
                 case VERTICAL_LOOKUP: {
                     GetSkiersVerticalRequest verticalReq = GetRequestValidator.parseSkierDayRequest(req, parts);
-                    System.out.println(verticalReq.skierID + " " + verticalReq.resortID + " " + verticalReq.seasonID);
                     VerticalRequest request = VerticalRequest.newBuilder().setSkierID(verticalReq.skierID).setResortID(Integer.parseInt(verticalReq.resortID)).setSeasonID(verticalReq.seasonID == null ? "" : verticalReq.seasonID).build();
 
                     VerticalListResponse response = stub.getTotalVertical(request);

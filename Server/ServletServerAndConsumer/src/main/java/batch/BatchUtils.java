@@ -10,15 +10,14 @@ public class BatchUtils {
     }
 
     public static long estimateRowCount(Configuration config) {
-        try (Connection conn = DriverManager.getConnection(config.MYSQL_READ_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD); PreparedStatement stmt = conn.prepareStatement(config.AGGREGATION_FULL_ROW_COUNT_SQL)) {
-            stmt.setString(1, config.MYSQL_TABLE_SCHEMA);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getLong("TABLE_ROWS");
-                }
+        try (Connection conn = DriverManager.getConnection(config.MYSQL_READ_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(config.AGGREGATION_FULL_ROW_COUNT_SQL);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getLong("row_count");
             }
         } catch (SQLException e) {
-            System.err.println("[estimateRowCount] Failed to query TABLE_ROWS: " + e.getMessage());
+            System.err.println("[estimateRowCount] Failed to count rows: " + e.getMessage());
         }
         return Long.MAX_VALUE; // fallback: don't run full aggregation
     }

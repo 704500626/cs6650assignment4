@@ -102,7 +102,6 @@ public class GetRequestValidator {
     public static GetSkiersVerticalRequest parseSkierDayRequest(HttpServletRequest req, String[] parts) {
         String resortID = req.getParameter("resortID");
         String seasonID = req.getParameter("seasonID");
-        System.out.println("SkierReadServlet Line 105: " + resortID + " " +  seasonID);
         if (resortID == null || resortID.isEmpty()) {
             throw new IllegalArgumentException("Missing required 'resort' parameter");
         }
