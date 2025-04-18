@@ -53,6 +53,7 @@ public class Configuration {
     public int LIFTRIDE_READ_SERVICE_PORT = 8081;
     public int LIFTRIDE_READ_SERVICE_MIN_THREAD = 100; // KNOB: the minimum number of threads handling the incoming RPC requests in read service
     public int LIFTRIDE_READ_SERVICE_MAX_THREAD = 500;// KNOB: the maximum number of threads handling the incoming RPC requests in read service
+    public int LIFTRIDE_READ_SERVICE_CACHE_WRITE_WORKER = 1; // KNOB: the number of cache write workers
     public int LIFTRIDE_READ_SERVICE_REQUEST_QUEUE_SIZE = 10000; // KNOB: the maximum number of incoming RPC requests that can be queued in read service
     public int LIFTRIDE_READ_SERVICE_CACHE_QUEUE_SIZE = 5000; // KNOB: the maximum number of cache write messages that can be queued in read service
     public int LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE = 100; // KNOB: the batch size of the cache write messages
@@ -183,6 +184,7 @@ public class Configuration {
         LIFTRIDE_READ_SERVICE_PORT = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_PORT"));
         LIFTRIDE_READ_SERVICE_MIN_THREAD = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_MIN_THREAD"));
         LIFTRIDE_READ_SERVICE_MAX_THREAD = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_MAX_THREAD"));
+        LIFTRIDE_READ_SERVICE_CACHE_WRITE_WORKER = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_CACHE_WRITE_WORKER"));
         LIFTRIDE_READ_SERVICE_REQUEST_QUEUE_SIZE = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_REQUEST_QUEUE_SIZE"));
         LIFTRIDE_READ_SERVICE_CACHE_QUEUE_SIZE = Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_CACHE_QUEUE_SIZE"));
         LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE= Integer.parseInt(properties.getProperty("LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE"));

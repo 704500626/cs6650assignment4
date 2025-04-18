@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 // TODO set batch size
-public class FullAggregationGuava implements AggregationStrategy {
+public class FullAggregation implements AggregationStrategy {
     private final Configuration config;
     private final RedisCacheClient cache;
     private final Connection conn;
@@ -22,7 +22,7 @@ public class FullAggregationGuava implements AggregationStrategy {
     private final LiftRideBloomFilter liftRideBloomFilter;
     private LiftRideBloomFilter tempFilter;
 
-    public FullAggregationGuava(Configuration config, RedisCacheClient cache, LiftRideBloomFilter liftRideBloomFilter) throws SQLException {
+    public FullAggregation(Configuration config, RedisCacheClient cache, LiftRideBloomFilter liftRideBloomFilter) throws SQLException {
         this.config = config;
         this.cache = cache;
         this.liftRideBloomFilter = liftRideBloomFilter;
@@ -157,7 +157,7 @@ public class FullAggregationGuava implements AggregationStrategy {
         Configuration config = ConfigUtils.getConfigurationForService();
         RedisCacheClient cacheClient = new RedisCacheClient(config);
         LiftRideBloomFilter liftRideBloomFilter = new LiftRideBloomFilter(config);
-        AggregationStrategy full = new FullAggregationGuava(config, cacheClient, liftRideBloomFilter);
+        AggregationStrategy full = new FullAggregation(config, cacheClient, liftRideBloomFilter);
         long startTime = System.currentTimeMillis();
         full.run();
         long endTime = System.currentTimeMillis();

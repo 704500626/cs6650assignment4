@@ -7,12 +7,12 @@ import utils.ConfigUtils;
 
 import java.sql.*;
 
-public class BloomOnlyAggregationGuava implements AggregationStrategy {
+public class BloomOnlyAggregation implements AggregationStrategy {
     private final Configuration config;
     private final Connection conn;
     private final LiftRideBloomFilter liftRideBloomFilter;
 
-    public BloomOnlyAggregationGuava(Configuration config, LiftRideBloomFilter liftRideBloomFilter) throws SQLException {
+    public BloomOnlyAggregation(Configuration config, LiftRideBloomFilter liftRideBloomFilter) throws SQLException {
         this.config = config;
         this.liftRideBloomFilter = liftRideBloomFilter;
         this.conn = DriverManager.getConnection(config.MYSQL_READ_URL, config.MYSQL_USERNAME, config.MYSQL_PASSWORD);
@@ -73,7 +73,7 @@ public class BloomOnlyAggregationGuava implements AggregationStrategy {
     public static void main(String[] args) throws Exception {
         Configuration config = ConfigUtils.getConfigurationForService();
         LiftRideBloomFilter liftRideBloomFilter = new LiftRideBloomFilter(config);
-        AggregationStrategy bloomOnly = new BloomOnlyAggregationGuava(config, liftRideBloomFilter);
+        AggregationStrategy bloomOnly = new BloomOnlyAggregation(config, liftRideBloomFilter);
         long startTime = System.currentTimeMillis();
         bloomOnly.run();
         long endTime = System.currentTimeMillis();

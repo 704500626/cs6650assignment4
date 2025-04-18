@@ -23,8 +23,8 @@ public class BatchAggregationServer {
 
             LiftRideBloomFilter bloomFilter = new LiftRideBloomFilter(config);
             RedisCacheClient cacheClient = new RedisCacheClient(config);
-            AggregationStrategy full = new FullAggregationGuava(config, cacheClient, bloomFilter);
-            AggregationStrategy bloomOnly = new BloomOnlyAggregationGuava(config, bloomFilter);
+            AggregationStrategy full = new FullAggregation(config, cacheClient, bloomFilter);
+            AggregationStrategy bloomOnly = new BloomOnlyAggregation(config, bloomFilter);
             AggregationStrategy refreshHotKeys = new RefreshExistingCache(config, cacheClient);
 
             ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);

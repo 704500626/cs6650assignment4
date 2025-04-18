@@ -1,6 +1,5 @@
 package cache;
 
-import old.RedisBloomCommand;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import grpc.LiftRideReadProto;
@@ -146,52 +145,6 @@ public class RedisCacheClient {
     public void setSingleSeasonVertical(int skierId, int resortId, String seasonId, int vertical) {
         String key = getSingleSeasonVerticalKey(skierId, resortId, seasonId);
         sync.set(key, String.valueOf(vertical));
-    }
-
-    // TODO move Bloom Filter code out
-    // Create a new Bloom Filter
-    public void createFilter(String key, long capacity, double errorRate) {
-        sync.del(key);
-        sync.dispatch(RedisBloomCommand.BF_RESERVE, new StatusOutput<>(StringCodec.UTF8), new CommandArgs<>(StringCodec.UTF8).add(key).add(errorRate).add(capacity));
-    }
-
-    // Add a value to the filter
-    public boolean add(String key, String item) {
-        return Boolean.TRUE.equals(sync.dispatch(RedisBloomCommand.BF_ADD, new BooleanOutput<>(StringCodec.UTF8), new CommandArgs<>(StringCodec.UTF8).add(key).add(item)));
-    }
-
-//    public void addBatch(String filterName, List<String> items) {
-//        if (items == null || items.isEmpty()) return;
-//
-//        CommandArgs<String, String> args = new CommandArgs<>(StringCodec.UTF8).add(filterName);
-//        for (String item : items) {
-//            args.add(item);
-//        }
-//
-//        // Expecting a list of integers as response from BF.MADD
-//        sync.dispatch(
-//                RedisBloomCommand.BF_MADD,
-//                new IntegerListOutput<>(StringCodec.UTF8),  // ✅ Correct output type
-//                args
-//        );
-//    }
-
-    public void addBatch(String filterKey, List<String> items) {
-        if (items == null || items.isEmpty()) return;
-        sync.dispatch(
-                RedisBloomCommand.BF_MADD,
-                new VoidOutput<>(StringCodec.UTF8),
-                new CommandArgs<>(StringCodec.UTF8).add(filterKey).addValues(items)
-        );
-    }
-
-    // Check if a value may exist
-    public boolean exists(String key, String item) {
-        return Boolean.TRUE.equals(sync.dispatch(RedisBloomCommand.BF_EXISTS, new BooleanOutput<>(StringCodec.UTF8), new CommandArgs<>(StringCodec.UTF8).add(key).add(item)));
-    }
-
-    public void rename(String oldKey, String newKey) {
-        sync.rename(oldKey, newKey);
     }
 
     public Set<String> scanKeys(String pattern) {

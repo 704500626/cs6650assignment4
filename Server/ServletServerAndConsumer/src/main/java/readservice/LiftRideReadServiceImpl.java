@@ -33,7 +33,7 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
     private final RedisCacheClient cache;
     private final Configuration config;
     private final BlockingQueue<CacheWrite> cacheQueue;
-    private final Thread cacheWriterThread;
+    private final ExecutorService cacheWriterPool;
 
     private final SkierDayRidesQuery skierDayRidesQuery;
     private final ResortDaySkiersQuery resortDaySkiersQuery;
@@ -53,10 +53,12 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
         this.dbReader = new LiftRideReader(config);
         this.cache = new RedisCacheClient(config);
         this.cacheQueue = new LinkedBlockingQueue<>(config.LIFTRIDE_READ_SERVICE_CACHE_QUEUE_SIZE);
-        this.cacheWriterThread = new Thread(new CacheWriterWorker(cache, cacheQueue,
-                config.LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE,
-                config.LIFTRIDE_READ_SERVICE_CACHE_FLUSH_INTERVAL_MS));
-        this.cacheWriterThread.start();
+        this.cacheWriterPool = Executors.newFixedThreadPool(config.LIFTRIDE_READ_SERVICE_CACHE_WRITE_WORKER);
+        for (int i = 0; i < config.LIFTRIDE_READ_SERVICE_CACHE_WRITE_WORKER; i++) {
+            cacheWriterPool.submit(new CacheWriterWorker(cache, cacheQueue,
+                    config.LIFTRIDE_READ_SERVICE_CACHE_BATCH_SIZE,
+                    config.LIFTRIDE_READ_SERVICE_CACHE_FLUSH_INTERVAL_MS));
+        }
 
         if (config.LIFTRIDE_READ_SERVICE_LRU_SWITCH) {
             setupLocalLRU(config);
@@ -248,10 +250,24 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
     public void close() {
         dbReader.close();
         cache.close();
+
+        try {
+            cacheWriterPool.shutdown();
+            if (!cacheWriterPool.awaitTermination(10, TimeUnit.SECONDS)) {
+                cacheWriterPool.shutdownNow(); // force shutdown if timeout exceeded
+            }
+        } catch (InterruptedException e) {
+            cacheWriterPool.shutdownNow(); // in case current thread was interrupted
+            Thread.currentThread().interrupt(); // preserve interrupt status
+            throw new RuntimeException(e);
+        }
+
         if (config.LIFTRIDE_READ_SERVICE_LRU_SWITCH) {
             try {
                 lruRefresher.shutdown();
-                lruRefresher.awaitTermination(10, TimeUnit.SECONDS);
+                if (!lruRefresher.awaitTermination(10, TimeUnit.SECONDS)) {
+                    lruRefresher.shutdownNow();
+                }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -260,7 +276,9 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
         if (config.LIFTRIDE_READ_SERVICE_COLLECT_METRICS) {
             try {
                 metricsCollector.shutdown();
-                metricsCollector.awaitTermination(10, TimeUnit.SECONDS);
+                if (!metricsCollector.awaitTermination(10, TimeUnit.SECONDS)) {
+                    metricsCollector.shutdownNow();
+                }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -271,16 +289,9 @@ public class LiftRideReadServiceImpl extends SkierReadServiceGrpc.SkierReadServi
                 batchServiceChannel.shutdown();
                 batchServiceChannel.awaitTermination(10, TimeUnit.SECONDS);
                 bloomRefresher.shutdown();
-                bloomRefresher.awaitTermination(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        if (cacheWriterThread != null && cacheWriterThread.isAlive()) {
-            cacheWriterThread.interrupt();
-            try {
-                cacheWriterThread.join(2000);
+                if (!bloomRefresher.awaitTermination(10, TimeUnit.SECONDS)) {
+                    bloomRefresher.shutdownNow();
+                }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
